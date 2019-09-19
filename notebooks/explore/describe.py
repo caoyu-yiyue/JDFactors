@@ -7,7 +7,7 @@ import statsmodels.api as sm
 import statsmodels.tsa.api as smt
 import matplotlib.pyplot as plt
 import itertools
-# from arch.univariate import arch_model
+from arch.univariate import arch_model
 from IPython.core.interactiveshell import InteractiveShell
 
 # %%
@@ -213,3 +213,62 @@ smt.graphics.plot_pacf(one_mdl_hml.resid,
 # smt.graphics.plot_acf(res.resid.dropna() / 100, lags=50)
 
 # smt.graphics.plot_acf(res.resid.dropna().abs() / 100, lags=50)
+
+# %%
+# 使用garch 与上面的ARIMA 同阶的garch 模型
+am = arch_model(10 * week_3fac['premium'], p=2, o=1, q=1, dist='StudentsT')
+res = am.fit()
+
+smt.graphics.plot_acf(res.resid * res.resid,
+                      title='Resid AutoCorr for premium garch')
+
+smt.graphics.plot_pacf(res.resid * res.resid,
+                       title='Resid AutoCorr for premium garch')
+
+# %%
+# 使用arma 估计一个residual，然后并用garch 估计它
+premium_arma = smt.ARMA(week_3fac['premium'], order=(2, 1)).fit(method='mle',
+                                                                trend='nc')
+
+
+# %%
+def _get_best_garch(ts_series):
+    best_aic = np.inf
+    best_mdl = None
+    best_order = None
+
+    pq_rng = range(5)
+    o_rng = range(5)
+
+    for _p in pq_rng:
+        for _o in o_rng:
+            for _q in pq_rng:
+                try:
+                    temp_mdl = arch_model(ts_series,
+                                          mean='Zero',
+                                          p=_p,
+                                          o=_o,
+                                          q=_q,
+                                          dist='skewt').fit(disp='off')
+                    temp_aic = temp_mdl.aic
+                    if temp_aic < best_aic:
+                        best_aic = temp_aic
+                        best_order = (_p, _o, _q)
+                        best_mdl = temp_mdl
+
+                except Exception:
+                    continue
+
+    print('best aic {:6.5f} | best order: {}'.format(best_aic, best_order))
+    return best_aic, best_order, best_mdl
+
+
+_, _, best_garch_res = _get_best_garch(premium_arma.resid * 10)
+"""best_order = (2,2,3)"""
+
+# %%
+standard_resid = best_garch_res.resid / best_garch_res.conditional_volatility
+smt.graphics.plot_acf(standard_resid * standard_resid,
+                      title='Resid for arma-garch Auto')
+smt.graphics.plot_pacf(standard_resid * standard_resid,
+                       title='Resid for arma-garch partialAuto')
