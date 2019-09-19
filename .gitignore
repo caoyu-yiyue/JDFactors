@@ -6,3 +6,5 @@ notebook_env.db
 .ipynb_checkpoints/
 __pycache__/
 .pytest_cache/
+.Rproj.user
+.Rhistory
