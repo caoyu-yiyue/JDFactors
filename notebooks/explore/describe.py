@@ -272,3 +272,55 @@ smt.graphics.plot_acf(standard_resid * standard_resid,
                       title='Resid for arma-garch Auto')
 smt.graphics.plot_pacf(standard_resid * standard_resid,
                        title='Resid for arma-garch partialAuto')
+
+
+# %%
+# 使用同样的arma（2，1） - gjrGarch（1，1, 1） 应用在每个因子上
+def arma_garch(ts_series: pd.Series, arma_order: tuple, garch_order: tuple):
+    arma_mdl = smt.ARMA(ts_series, order=arma_order).fit(method='mle',
+                                                         trend='nc')
+    arma_resid: pd.Series = arma_mdl.resid
+    garch_mdl = arch_model(arma_resid * 100,
+                           mean='Zero',
+                           p=garch_order[0],
+                           o=garch_order[1],
+                           q=garch_order[2],
+                           dist='skewt').fit(disp='off')
+    standard_resid = garch_mdl.resid / garch_mdl.conditional_volatility
+
+    # figure
+    plt.figure(figsize=(13, 8))
+    layout = (2, 2)
+    acf_ax = plt.subplot2grid(layout, (0, 0))
+    acf_square_ax = plt.subplot2grid(layout, (0, 1))
+
+    pacf_ax = plt.subplot2grid(layout, (1, 0))
+    pacf_square_ax = plt.subplot2grid(layout, (1, 1))
+
+    arma_garch_order_str = 'Arma{}-Garch{}'.format(arma_order, garch_order)
+    smt.graphics.plot_acf(standard_resid,
+                          ax=acf_ax,
+                          title=arma_garch_order_str + ' Residual ACF for ' +
+                          ts_series.name)
+    smt.graphics.plot_acf(standard_resid**2,
+                          ax=acf_square_ax,
+                          title=arma_garch_order_str +
+                          ' Squared Residual ACF for ' + ts_series.name)
+    smt.graphics.plot_pacf(standard_resid,
+                           ax=pacf_ax,
+                           title=arma_garch_order_str + ' Residual PACF for ' +
+                           ts_series.name)
+    smt.graphics.plot_pacf(standard_resid**2,
+                           ax=pacf_square_ax,
+                           title=arma_garch_order_str +
+                           ' Squared Residual PACF for ' + ts_series.name)
+
+    plt.tight_layout()
+
+
+# week_3fac.apply(arma_garch, arma_order=(2, 1), garch_order=(1, 1, 1))
+# week_3fac.apply(arma_garch, arma_order=(2, 1), garch_order=(3, 1, 1))
+week_3fac.apply(arma_garch, arma_order=(3, 0), garch_order=(1, 1, 1))
+
+# %% [markdown]
+# 使用arma(3, 0)-GJRGarch(1, 1, 1) 基本上可以解决残差一阶和二阶的自相关
