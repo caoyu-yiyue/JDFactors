@@ -26,9 +26,10 @@ week_3fac_raw: pd.DataFrame = pd.read_csv(
     index_col='trdWeek',
     parse_dates=True)
 week_3fac_raw.index = pd.to_datetime(week_3fac_raw.index + '-5',
-                                     format='%Y-%W-%w')
+                                     format='%G-%V-%u')
 week_3fac_raw.sort_index(inplace=True)
 
+week_3fac_raw.to_csv('data/raw/csvFiles/week_readed.csv')
 # %%
 # 选择所需的时间区间
 week_3fac: pd.DataFrame = week_3fac_raw.loc['2000-01-01':]
