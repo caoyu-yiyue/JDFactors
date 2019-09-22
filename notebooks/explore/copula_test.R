@@ -42,7 +42,7 @@ arch_roll_dist_df <- lapply(arch_roll, FUN = as.data.frame, which = "density")
 cls <- makeCluster(4, type = "FORK")
 doParallel::registerDoParallel(cls, cores = 2)
 # 这里因为最后一年只使用前一年的模型，所以不必对它进行循环计算
-cop_params <- foreach(i = year_end_idx[4:length(year_end_idx) - 1], .combine = "rbind") %dopar% {
+cop_params <- foreach(i = year_end_idx[4:(length(year_end_idx) - 1)], .combine = "rbind") %dopar% {
   d_dim <- ncol(week_fac)
   d_window <- week_fac[1:i]
 
