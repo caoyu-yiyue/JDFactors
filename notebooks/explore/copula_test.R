@@ -1,9 +1,11 @@
+
 library(rugarch)
 library(copula)
 library(readr)
 library(dplyr)
 library(xts)
 library(sn)
+library(foreach)
 
 # 读取数据并转换成xts
 week_raw <- read_csv("data/raw/csvFiles/week_readed.csv")
@@ -17,7 +19,7 @@ mean_mdl <- list(armaOrder = c(3, 0))
 archSpec <- ugarchspec(variance.model = var_mdl, mean.model = mean_mdl, distribution.model = "sstd")
 
 
-# 滚动估计garch
+###### 滚动估计garch ######
 year_end_idx <- endpoints(week_fac, on = "year")
 cluster <- makeCluster(4, type = "FORK")
 rolling_arch <- function(fac_ts) {
@@ -34,6 +36,31 @@ arch_roll_dist_df <- lapply(arch_roll, FUN = as.data.frame, which = "density")
 # 保存roll garch 的结果
 # save(arch_roll, arch_roll_dist_df, file = "data/interim/arch_roll_dist.Rda")
 
+
+
+#### 按年滚动估计copula 系数 #####
+cls <- makeCluster(4, type = "FORK")
+doParallel::registerDoParallel(cls, cores = 2)
+# 这里因为最后一年只使用前一年的模型，所以不必对它进行循环计算
+cop_params <- foreach(i = year_end_idx[4:length(year_end_idx) - 1], .combine = "rbind") %dopar% {
+  d_dim <- ncol(week_fac)
+  d_window <- week_fac[1:i]
+
+  pob_var <- pobs(as.matrix(d_window))
+  cop_mdl <- tCopula(dim = d_dim)
+  cop_fit <- fitCopula(cop_mdl, pob_var, method = "ml")
+
+  # year_dix_last <- format(index(week_fac[year_end_idx[i]]), "%Y")
+  year_idx <- index(week_fac[i + 1])
+  copula_params <- xts(t(coef(cop_fit)), year_idx)
+
+  return(copula_params)
+}
+stopCluster(cls)
+
+
+
+####### 下面的先不用管 ###########
 
 # 使用前三年的数据计算的t_copula，然后使用预测的第一天计算的因子分布得出多维联合分布
 test_windwo_1 <- week_fac[1:year_end_idx[4]]
