@@ -31,7 +31,9 @@ rolling_arch <- function(fac_ts) {
 }
 arch_roll <- lapply(week_fac, rolling_arch)
 stopCluster(cluster)
-arch_roll_dist_df <- lapply(arch_roll, FUN = as.data.frame, which = "density")
+arch_roll_dist_df <- lapply(arch_roll, FUN = function(x) {
+  as.data.frame(x, which = "density")[, 1:4]
+})
 
 # 保存roll garch 的结果
 # save(arch_roll, arch_roll_dist_df, file = "data/interim/arch_roll_dist.Rda")
@@ -57,6 +59,26 @@ cop_params <- foreach(i = year_end_idx[4:(length(year_end_idx) - 1)], .combine =
   return(copula_params)
 }
 stopCluster(cls)
+
+
+
+####### merge factors dp for skewt dist #############
+# 把每天的skew-t 分布的cp 参数转化成ns 包使用的dp 参数
+cpDf2dpDf <- function(df) {
+  # 对df 中的每一行进行cp2dp，最后返回一个xts 对象
+  dp_matrix <- t(apply(df, 1, FUN = cp2dp, family = "ST"))
+  return(as.xts(dp_matrix))
+}
+# 对arch_roll_dist_df 中的每一个data.farme 进行转换
+roll_dist_dp <- lapply(arch_roll_dist_df, cpDf2dpDf)
+
+# 把不同因子的参数merge 到一起
+names(Reduce(f = function(left, right) {
+  merge.xts(as.xts(left), as.xts(right))
+}, roll_dist_dp))
+
+
+
 
 
 
