@@ -105,7 +105,7 @@ margin_params_xts <- merge_margin_dist_params(margin_params_list = roll_dist_dp)
 merged_params <- merge(margin_params_xts, cop_params, join = "outer")
 # 每一年使用初年估计的copula 参数，所以使用其向前填充
 merged_params <- na.locf(merged_params)
-
+save(merged_params, file = "data/interim/merged_params.Rda")
 
 
 ####### 下面的先不用管 ###########
