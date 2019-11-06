@@ -72,7 +72,7 @@ stopCluster(cls)
 cpDf2dpDf <- function(df) {
   # 对df 中的每一行进行cp2dp，最后返回一个xts 对象
   dp_matrix <- t(apply(df, 1, FUN = cp2dp, family = "ST"))
-  
+
   # 确保index 为Date 对象，不包括时间
   idx <- as.Date(rownames(dp_matrix))
   return(xts(dp_matrix, order.by = idx))
@@ -106,6 +106,42 @@ merged_params <- merge(margin_params_xts, cop_params, join = "outer")
 # 每一年使用初年估计的copula 参数，所以使用其向前填充
 merged_params <- na.locf(merged_params)
 save(merged_params, file = "data/interim/merged_params.Rda")
+
+
+######### 计算最佳权重 ###############
+FAC_NAMES <- names(arch_roll_dist_df)
+randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
+  # 根据保存边际分布参数与copula 参数的行，生成联合分布的随机数
+  # current_row: 保存参数的行。这里为一个单行的xts 对象
+  # seed: 生成随机数的seed，默认为101。
+  # n: 需要的随机数的个数，默认为100000。
+  
+  # 每一行单独进行操作，所以不需要index。否则后续会把index 认为是多的一列。
+  current_row <- coredata(current_row)
+
+  # 指定t_copula 对象
+  t_cop_row <- tCopula(
+    param = current_row[, c("rho.1", "rho.2", "rho.3")],
+    dim = length(FAC_NAMES), df = current_row[, "df"], dispstr = "un"
+  )
+
+  # 指定边际分布的参数。对每个FAC_NAME 找到其在合并参数总表中的参数列。
+  # 最后返回的list 每个对象都命名为"dp"
+  margin_param_list <- lapply(FAC_NAMES, FUN = function(name) {
+    current_row[, grep(name, colnames(current_row))]
+  })
+  names(margin_param_list) <- rep("dp", times = length(FAC_NAMES))
+
+  # 通过t_copula 和skew t 边际分布生成多维分布，从而得到随机数。
+  # 返回的结果起名为FAC_NAMES 
+  row_mvdc <- mvdc(copula = t_cop_row, margins = c("st", "st", "st"), paramMargins = margin_param_list)
+  set.seed(seed = seed)
+  multidis_random_nums <- rMvdc(n = n, mvdc = row_mvdc)
+  colnames(multidis_random_nums) <- FAC_NAMES
+
+  return(multidis_random_nums)
+}
+head(randomNum_tCop_stMargin(merged_params[1, ], seed = 101))
 
 
 ####### 下面的先不用管 ###########
