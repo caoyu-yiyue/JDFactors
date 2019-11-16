@@ -117,53 +117,60 @@ randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
   # current_row: 保存参数的行。这里apply 会传入一个numeric vector
   # seed: 生成随机数的seed，默认为101。
   # n: 需要的随机数的个数，默认为100000。
-
+  
   # 每一行单独进行操作，所以不需要index。否则后续会把index 认为是多的一列。
   current_row <- coredata(current_row)
-
+  
   # 指定t_copula 对象
   t_cop_row <- tCopula(
-    param = current_row[c("rho.1", "rho.2", "rho.3")],
-    dim = length(FAC_NAMES), df = current_row["df"], dispstr = "un"
+    param = current_row[, c("rho.1", "rho.2", "rho.3")],
+    dim = length(FAC_NAMES), df = current_row[, "df"], dispstr = "un"
   )
-
+  
   # 指定边际分布的参数。对每个FAC_NAME 找到其在合并参数总表中的参数列。
   # 最后返回的list 每个对象都命名为"dp"
   margin_param_list <- lapply(FAC_NAMES, FUN = function(name) {
-    current_row[grep(name, names(current_row))]
+    current_row[, grep(name, colnames(current_row))]
   })
   names(margin_param_list) <- rep("dp", times = length(FAC_NAMES))
-
+  
   # 通过t_copula 和skew t 边际分布生成多维分布，从而得到随机数。
   # 返回的结果起名为FAC_NAMES
   row_mvdc <- mvdc(copula = t_cop_row, margins = c("st", "st", "st"), paramMargins = margin_param_list)
   set.seed(seed = seed)
   multidis_random_nums <- rMvdc(n = n, mvdc = row_mvdc)
-  # colnames(multidis_random_nums) <- FAC_NAMES
-
+  colnames(multidis_random_nums) <- FAC_NAMES
+  
   return(multidis_random_nums)
 }
 
 # test_random_num <- randomNum_tCop_stMargin(merged_params[1, ], seed = 101)
 
-RANDOM_N = 100
-multi_dist_random_num <- apply(merged_params, MARGIN = 1, 
-                               FUN = randomNum_tCop_stMargin, n=RANDOM_N)
-# 加行名，然后转置
-rownames(multi_dist_random_num) <- paste(rep(FAC_NAMES, each = RANDOM_N), 1:RANDOM_N, sep = "_")
-multi_dist_random_num <- tk_tbl(t(multi_dist_random_num), rename_index = "date")
-
-# 合并同样因子的列
-multi_dist_random_num <- multi_dist_random_num %>% 
-  pivot_longer(
-    cols = -date,
-    names_to = c(".value", "ran_order"),
-    names_sep = "_"
-) %>% 
-  select(-ran_order)
+gen_multi_dist_random <- function(param_df, n) {
+  row_n <- nrow(param_df)
   
+  # 使用并行循环计算随机数（按行数循环）
+  cls <- makeCluster(4, type = "FORK")
+  doParallel::registerDoParallel(cls, cores = 2)
+  multi_dist_random_num <- foreach(i = 1:row_n, .combine = "rbind") %dopar% {
+    randomNum_tCop_stMargin(param_df[1, ], n = n)
+  }
+  stopCluster(cls)
+  
+  # 加入date 列，成为一个data.frame 然后输出
+  random_num_df <- as.data.frame(multi_dist_random_num)
+  date <- rep(index(param_df), each = n)
+  result_df <- cbind(date, random_num_df)
+  
+  return(result_df)
+}
+
+random_num_result <- gen_multi_dist_random(param_df = merged_params, n =50000)
+
+# 随机数保存为feather 文件
 library(feather)
-write_feather(multi_dist_random_num, path = "data/interim/random_num.feather")
+write_feather(as.data.frame(multi_dist_random_num),
+              path = "data/interim/random_num.feather")
 
 
 # # 使用生成的随机数最大化权重值
