@@ -3,9 +3,11 @@ library(rugarch)
 library(copula)
 library(readr)
 library(dplyr)
+library(tidyr)
 library(xts)
 library(sn)
 library(foreach)
+library(timetk)
 
 # 读取数据并转换成xts
 week_raw <- read_csv("data/raw/csvFiles/week_readed.csv")
@@ -112,37 +114,86 @@ save(merged_params, file = "data/interim/merged_params.Rda")
 FAC_NAMES <- names(arch_roll_dist_df)
 randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
   # 根据保存边际分布参数与copula 参数的行，生成联合分布的随机数
-  # current_row: 保存参数的行。这里为一个单行的xts 对象
+  # current_row: 保存参数的行。这里apply 会传入一个numeric vector
   # seed: 生成随机数的seed，默认为101。
   # n: 需要的随机数的个数，默认为100000。
-  
+
   # 每一行单独进行操作，所以不需要index。否则后续会把index 认为是多的一列。
   current_row <- coredata(current_row)
 
   # 指定t_copula 对象
   t_cop_row <- tCopula(
-    param = current_row[, c("rho.1", "rho.2", "rho.3")],
-    dim = length(FAC_NAMES), df = current_row[, "df"], dispstr = "un"
+    param = current_row[c("rho.1", "rho.2", "rho.3")],
+    dim = length(FAC_NAMES), df = current_row["df"], dispstr = "un"
   )
 
   # 指定边际分布的参数。对每个FAC_NAME 找到其在合并参数总表中的参数列。
   # 最后返回的list 每个对象都命名为"dp"
   margin_param_list <- lapply(FAC_NAMES, FUN = function(name) {
-    current_row[, grep(name, colnames(current_row))]
+    current_row[grep(name, names(current_row))]
   })
   names(margin_param_list) <- rep("dp", times = length(FAC_NAMES))
 
   # 通过t_copula 和skew t 边际分布生成多维分布，从而得到随机数。
-  # 返回的结果起名为FAC_NAMES 
+  # 返回的结果起名为FAC_NAMES
   row_mvdc <- mvdc(copula = t_cop_row, margins = c("st", "st", "st"), paramMargins = margin_param_list)
   set.seed(seed = seed)
   multidis_random_nums <- rMvdc(n = n, mvdc = row_mvdc)
-  colnames(multidis_random_nums) <- FAC_NAMES
+  # colnames(multidis_random_nums) <- FAC_NAMES
 
   return(multidis_random_nums)
 }
-head(randomNum_tCop_stMargin(merged_params[1, ], seed = 101))
 
+# test_random_num <- randomNum_tCop_stMargin(merged_params[1, ], seed = 101)
+
+RANDOM_N = 100
+multi_dist_random_num <- apply(merged_params, MARGIN = 1, 
+                               FUN = randomNum_tCop_stMargin, n=RANDOM_N)
+# 加行名，然后转置
+rownames(multi_dist_random_num) <- paste(rep(FAC_NAMES, each = RANDOM_N), 1:RANDOM_N, sep = "_")
+multi_dist_random_num <- tk_tbl(t(multi_dist_random_num), rename_index = "date")
+
+# 合并同样因子的列
+multi_dist_random_num <- multi_dist_random_num %>% 
+  pivot_longer(
+    cols = -date,
+    names_to = c(".value", "ran_order"),
+    names_sep = "_"
+) %>% 
+  select(-ran_order)
+  
+library(feather)
+write_feather(multi_dist_random_num, path = "data/interim/random_num.feather")
+
+
+# # 使用生成的随机数最大化权重值
+# library(PortfolioAnalytics)
+# CRRA <- function(R, weights, lambda, sigma, m3, m4) {
+#   weights <- matrix(weights, ncol = 1)
+#   M2.w <- t(weights) %*% sigma %*% weights
+#   M3.w <- t(weights) %*% m3 %*% (weights %x% weights)
+#   M4.w <- t(weights) %*% m4 %*% (weights %x% weights %x% weights)
+#   term1 <- (1 / 2) * lambda * M2.w
+#   term2 <- (1 / 6) * lambda * (lambda + 1) * M3.w
+#   term3 <- (1 / 24) * lambda * (lambda + 1) * (lambda + 2) * M4.w
+#   out <- -term1 + term2 - term3
+#   out
+# }
+# 
+# crra.moments <- function(R, ...) {
+#   out <- list() + out$sigma <- cov(R)
+#   out$m3 <- PerformanceAnalytics:::M3.MM(R)
+#   out$m4 <- PerformanceAnalytics:::M4.MM(R)
+#   out
+# }
+# 
+# crra_port <- portfolio.spec(assets = colnames(test_random_num))
+# crra_port <- add.constraint(crra_port, type = "full_investment")
+# crra_port <- add.objective(portfolio = crra_port, type = "return", name = "CRRA",
+#                            arguments = list(lambda = 10))
+# opt_crra <- optimize.portfolio(R = test_random_num, portfolio = crra_port,
+#                                momentFUN = "crra.moments", 
+#                                optimize_method = "DEoptim")
 
 ####### 下面的先不用管 ###########
 
