@@ -169,7 +169,7 @@ random_num_result <- gen_multi_dist_random(param_df = merged_params, n =50000)
 
 # 随机数保存为feather 文件
 library(feather)
-write_feather(as.data.frame(multi_dist_random_num),
+write_feather(as.data.frame(random_num_result),
               path = "data/interim/random_num.feather")
 
 
