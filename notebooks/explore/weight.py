@@ -63,6 +63,50 @@ def expect_value(weight: np.array, rf: float, gamma: float,
 
 
 # %%
+weight = np.array([0.1, 0.2, 0.3])
+first_array = first_group.drop('date', axis=1).to_numpy()
+gamma = 7
+test_core: np.array = (1 + rf + first_array.dot(weight))**(-gamma)
+test_result: np.ndarray = first_array * test_core[:, np.newaxis]
+
+
+# %%
+def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
+    """
+    针对目标函数计算梯度向量
+
+    Parameter:
+    ----------
+    weight:
+        np.array
+        权重array
+    rf:
+        float
+        下一期的无风险收益
+    gamma:
+        float
+        CRRA 中的gamma
+    fac_df:
+            np.ndarray
+            只保存因子的ndArray，不包含时间列
+
+    Result:
+    -------
+    np.array
+        表示梯度向量的np.array
+
+
+    """
+    # 计算每个导数的共同部分，命名为gradient_core
+    gradient_core: np.array = (1 + rf + fac_array.dot(weight))**(-gamma)
+    # 在每点（随机数）上，每个梯度分量，是共同部分乘以相应的因子值。
+    gradient_array: np.ndarray = fac_array * gradient_core[:, np.newaxis]
+
+    # 最终在每列上求平均，得到目标函数的梯度向量。
+    return gradient_array.mean(axis=0)
+
+
+# %%
 # 限制条件
 def weight_constrain(weight, mr):
     """
