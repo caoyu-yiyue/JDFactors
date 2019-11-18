@@ -1,6 +1,7 @@
 # %%
 import pandas as pd
 from scipy.optimize import minimize
+import numpy as np
 
 # %%
 random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
@@ -27,14 +28,15 @@ rf = rf_df.loc[nxt_date, 'Nrrwkdt']
 
 
 # %%
-def expect_value(weight, rf, gamma, fac_df):
+def expect_value(weight: np.array, rf: float, gamma: float,
+                 fac_ndarr: np.ndarray):
     """
     计算 CRRA 期望收益
 
     Parameter:
     ----------
     weight:
-        list
+        np.array
         权重序列
     rf:
         float
@@ -42,7 +44,8 @@ def expect_value(weight, rf, gamma, fac_df):
     gamma:
         CRRA 中的gamma 值
     fac_df:
-        带有factor 收益随机数的DataFrame，其中带一列date 表示日期。
+        np.ndarray
+        只保存因子的ndArray，不包含时间列
 
     Return:
     -------
@@ -50,15 +53,12 @@ def expect_value(weight, rf, gamma, fac_df):
         期望收益的相反数，因为要用到 minimize 函数中最大化期望
     """
 
-    # 去掉date 列，只剩下因子列
-    facs_data: pd.DataFrame = first_group.drop('date', axis=1)
-
     # 计算一个收益序列
-    return_series: pd.Series = ((facs_data.mul(weight, axis=1).sum(axis=1) +
-                                 rf + 1)**(1 - gamma)) / (1 - gamma)
+    utility_array: np.array = (1 + rf + fac_ndarr.dot(weight))**(1 - gamma) / (
+        1 - gamma)
 
     # 返回收益列序列的均值的相反数，从而最大化期望收益。
-    expected_value = return_series.mean()
+    expected_value = utility_array.mean()
     return -expected_value
 
 
