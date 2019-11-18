@@ -16,11 +16,18 @@ rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
                                   encoding='utf-16')
 
 # %%
-date_list: list = list(random_num['date'].drop_duplicates())
+DATE_LIST: list = list(random_num['date'].drop_duplicates())
+
+# %%
+# 通过现在所在的date 找到下一个date，并在rf 数据框中找到rf 数据
+current_date = first_group['date'][0]
+nxt_date_idx = DATE_LIST.index(current_date) + 1
+nxt_date = DATE_LIST[nxt_date_idx]
+rf = rf_df.loc[nxt_date, 'Nrrwkdt']
 
 
 # %%
-def expect_value(weight, gamma, fac_df):
+def expect_value(weight, rf, gamma, fac_df):
     """
     计算 CRRA 期望收益
 
@@ -29,6 +36,9 @@ def expect_value(weight, gamma, fac_df):
     weight:
         list
         权重序列
+    rf:
+        float
+        下一期的无风险收益
     gamma:
         CRRA 中的gamma 值
     fac_df:
@@ -39,11 +49,6 @@ def expect_value(weight, gamma, fac_df):
         float
         期望收益的相反数，因为要用到 minimize 函数中最大化期望
     """
-    # 通过现在所在的date 找到下一个date，并在rf 数据框中找到rf 数据
-    current_date = first_group['date'][0]
-    nxt_date_idx = date_list.index(current_date) + 1
-    nxt_date = date_list[nxt_date_idx]
-    rf = rf_df.loc[nxt_date, 'Nrrwkdt']
 
     # 去掉date 列，只剩下因子列
     facs_data: pd.DataFrame = first_group.drop('date', axis=1)
@@ -84,6 +89,6 @@ sol = minimize(fun=expect_value,
                method='SLSQP',
                x0=[0., 0., 0.],
                constraints=con,
-               args=(7, first_group),
+               args=(rf, 7, first_group),
                bounds=bnd)
 sol
