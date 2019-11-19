@@ -63,14 +63,6 @@ def expect_value(weight: np.array, rf: float, gamma: float,
 
 
 # %%
-weight = np.array([0.1, 0.2, 0.3])
-first_array = first_group.drop('date', axis=1).to_numpy()
-gamma = 7
-test_core: np.array = (1 + rf + first_array.dot(weight))**(-gamma)
-test_result: np.ndarray = first_array * test_core[:, np.newaxis]
-
-
-# %%
 def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
     """
     针对目标函数计算梯度向量
@@ -94,9 +86,8 @@ def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
     -------
     np.array
         表示梯度向量的np.array
-
-
     """
+
     # 计算每个导数的共同部分，命名为gradient_core
     gradient_core: np.array = (1 + rf + fac_array.dot(weight))**(-gamma)
     # 在每点（随机数）上，每个梯度分量，是共同部分乘以相应的因子值。
@@ -104,6 +95,49 @@ def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
 
     # 最终在每列上求平均，得到目标函数的梯度向量。
     return gradient_array.mean(axis=0)
+
+
+# %%
+def hass(weight: np.array, rf, gamma, fac_array: np.ndarray):
+    """
+    针对目标函数计算梯度向量
+
+    Parameter:
+    ----------
+    weight:
+        np.array
+        权重array
+    rf:
+        float
+        下一期的无风险收益
+    gamma:
+        float
+        CRRA 中的gamma
+    fac_df:
+            np.ndarray
+            只保存因子的ndArray，不包含时间列
+
+    Result:
+    -------
+    np.ndarray
+        一个2d array，是对 weight 向量的海塞矩阵，
+    """
+
+    # 首先计算每个海塞矩阵分量需要的共同部分，每一个随机数对应一个，形成一个array
+    hass_core = -gamma * (1 + rf + first_array.dot(weight))**(-gamma - 1)
+
+    # 计算海塞矩阵分量的后半部分，是fac_array 每一行的向量外积。
+    # 为了使每一行的计算自动归为一个ndarray，将fac_array 升到 3 维，
+    # 乘号前面的分量是一个列向量，后面的分量为行向量，最终在每个分量处对应相乘，得到向量的外积。
+    outer_product_array = first_array[:, :, np.
+                                      newaxis] * first_array[:, np.newaxis, :]
+    # 每个hass_core 分量乘对应的外积矩阵分量。这里将hass_core 升到 3 维相乘即可。
+    hass_matr_array: np.ndarray = outer_product_array * hass_core[:, np.
+                                                                  newaxis, np.
+                                                                  newaxis]
+
+    # 最终计算每个随机数形成的海塞矩阵的平均值，得到原 objective 函数的海塞矩阵
+    return hass_matr_array.mean(axis=0)
 
 
 # %%
