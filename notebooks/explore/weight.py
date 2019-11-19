@@ -124,13 +124,13 @@ def hass(weight: np.array, rf, gamma, fac_array: np.ndarray):
     """
 
     # 首先计算每个海塞矩阵分量需要的共同部分，每一个随机数对应一个，形成一个array
-    hass_core = -gamma * (1 + rf + first_array.dot(weight))**(-gamma - 1)
+    hass_core = -gamma * (1 + rf + fac_array.dot(weight))**(-gamma - 1)
 
     # 计算海塞矩阵分量的后半部分，是fac_array 每一行的向量外积。
     # 为了使每一行的计算自动归为一个ndarray，将fac_array 升到 3 维，
     # 乘号前面的分量是一个列向量，后面的分量为行向量，最终在每个分量处对应相乘，得到向量的外积。
-    outer_product_array = first_array[:, :, np.
-                                      newaxis] * first_array[:, np.newaxis, :]
+    outer_product_array = fac_array[:, :, np.newaxis] * fac_array[:, np.
+                                                                  newaxis, :]
     # 每个hass_core 分量乘对应的外积矩阵分量。这里将hass_core 升到 3 维相乘即可。
     hass_matr_array: np.ndarray = outer_product_array * hass_core[:, np.
                                                                   newaxis, np.
