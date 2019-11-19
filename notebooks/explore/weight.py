@@ -102,7 +102,7 @@ def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
 
 
 # %%
-def hass(weight: np.array, rf, gamma, fac_array: np.ndarray):
+def hess(weight: np.array, rf, gamma, fac_array: np.ndarray):
     """
     针对目标函数计算梯度向量
 
@@ -177,7 +177,7 @@ sol = minimize(fun=expect_value,
                args=(rf, 7, first_array),
                method='trust-constr',
                jac=jacob,
-               hess=hass,
+               hess=hess,
                constraints=con,
                bounds=bnd)
 sol
