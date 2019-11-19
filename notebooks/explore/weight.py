@@ -1,7 +1,8 @@
 # %%
 import pandas as pd
-from scipy.optimize import minimize
+from scipy.optimize import minimize, Bounds
 import numpy as np
+from numba import jit
 
 # %%
 random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
@@ -28,7 +29,8 @@ rf = rf_df.loc[nxt_date, 'Nrrwkdt']
 
 
 # %%
-def expect_value(weight: np.array, rf: float, gamma: float,
+@jit(nopython=True)
+def expect_value(weight: np.array, rf: float, gamma: int,
                  fac_ndarr: np.ndarray):
     """
     计算 CRRA 期望收益
@@ -53,6 +55,7 @@ def expect_value(weight: np.array, rf: float, gamma: float,
         期望收益的相反数，因为要用到 minimize 函数中最大化期望
     """
 
+    weight = np.asarray(weight)
     # 计算一个收益序列
     utility_array: np.array = (1 + rf + fac_ndarr.dot(weight))**(1 - gamma) / (
         1 - gamma)
@@ -88,6 +91,7 @@ def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
         表示梯度向量的np.array
     """
 
+    weight = np.asarray(weight)
     # 计算每个导数的共同部分，命名为gradient_core
     gradient_core: np.array = (1 + rf + fac_array.dot(weight))**(-gamma)
     # 在每点（随机数）上，每个梯度分量，是共同部分乘以相应的因子值。
@@ -123,6 +127,7 @@ def hass(weight: np.array, rf, gamma, fac_array: np.ndarray):
         一个2d array，是对 weight 向量的海塞矩阵，
     """
 
+    weight = np.asarray(weight)
     # 首先计算每个海塞矩阵分量需要的共同部分，每一个随机数对应一个，形成一个array
     hass_core = -gamma * (1 + rf + fac_array.dot(weight))**(-gamma - 1)
 
@@ -160,13 +165,19 @@ def weight_constrain(weight, mr):
 con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
 
 # %%
-bnd = ([0, 1], ) * (first_group.shape[1] - 1)
+FAC_NUM = random_num.shape[1]
+bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
+
+# %%
+first_array = first_group.drop('date', axis=1).to_numpy()
 
 # %%
 sol = minimize(fun=expect_value,
-               method='SLSQP',
                x0=[0., 0., 0.],
+               args=(rf, 7, first_array),
+               method='trust-constr',
+               jac=jacob,
+               hess=hass,
                constraints=con,
-               args=(rf, 7, first_group),
                bounds=bnd)
 sol
