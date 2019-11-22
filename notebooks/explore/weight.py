@@ -1,7 +1,10 @@
 # %%
-import pandas as pd
-from scipy.optimize import minimize, Bounds
 import numpy as np
+import pandas as pd
+from mystic.penalty import quadratic_inequality
+from mystic.solvers import diffev2
+from mystic.tools import random_seed
+# from scipy.optimize import Bounds, minimize
 
 # %%
 random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
@@ -148,46 +151,39 @@ def hess(weight: np.array, rf, gamma, fac_array: np.ndarray):
 
 # %%
 # 限制条件
-def weight_constrain(weight, mr):
-    """
-    对权重的和施加限制条件，
-    Parameters:
-    -----------
-    weight:
-        list
-        权重序列
-    mr:
-        float
-        杠杆率
-    """
-    return (1 / mr) - weight[0] - (2 * np.sum(weight[1:]))
+# def weight_constrain(weight, mr):
+#     """
+#     对权重的和施加限制条件，
+#     Parameters:
+#     -----------
+#     weight:
+#         list
+#         权重序列
+#     mr:
+#         float
+#         杠杆率
+#     """
+#     return (1 / mr) - weight[0] - (2 * np.sum(weight[1:]))
 
 
-con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
+# con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
+
+# # %%
+# bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
+
+# # %%
+# sol = minimize(fun=expect_value,
+#                x0=[0., 0., 0.],
+#                args=(rf, 7, first_array),
+#                method='trust-constr',
+#                jac=jacob,
+#                hess=hess,
+#                constraints=con,
+#                bounds=bnd)
+# sol
+
 
 # %%
-bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
-
-# %%
-sol = minimize(fun=expect_value,
-               x0=[0., 0., 0.],
-               args=(rf, 7, first_array),
-               method='trust-constr',
-               jac=jacob,
-               hess=hess,
-               constraints=con,
-               bounds=bnd)
-sol
-
-# %%
-from mystic.solvers import diffev2
-from mystic.monitors import VerboseMonitor
-from mystic.tools import random_seed
-from mystic.penalty import quadratic_inequality
-from mystic.constraints import with_constraint
-from mystic.coupler import inner
-
-
 def penalty1(weight, mr):
     return weight[0] - 2 * (np.sum(weight[1:])) - (1 / mr)
 
@@ -198,12 +194,12 @@ def penalty(weight):
 
 
 bounds = [(0, 1)] * FAC_NUM
+random_seed(101)
 
 result = diffev2(cost=expect_value,
                  args=(rf, 7, first_array),
                  x0=bounds,
                  bounds=bounds,
                  penalty=penalty,
-                 npop=40,
-                 disp=True,
-                 full_output=True)
+                 npop=40)
+result[0]
