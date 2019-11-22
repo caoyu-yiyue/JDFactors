@@ -6,9 +6,10 @@ import numpy as np
 # %%
 random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
 random_num['date'] = pd.to_datetime(random_num['date'], format='%Y-%m-%d')
+random_num.set_index('date', inplace=True)
 grouped = random_num.groupby("date")
-first_group: pd.DataFrame = grouped.get_group(('2003-01-03'))
-first_array = first_group.drop('date', axis=1).to_numpy()
+first_group: pd.DataFrame = grouped.get_group('2003-01-03')
+first_array = first_group.to_numpy()
 
 # %%
 rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
