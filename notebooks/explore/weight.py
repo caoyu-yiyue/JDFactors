@@ -19,6 +19,7 @@ rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
 
 # %%
 DATE_LIST: list = list(random_num['date'].drop_duplicates())
+FAC_NUM = random_num.shape[1]
 
 # %%
 # 通过现在所在的date 找到下一个date，并在rf 数据框中找到rf 数据
@@ -165,7 +166,6 @@ def weight_constrain(weight, mr):
 con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
 
 # %%
-FAC_NUM = random_num.shape[1]
 bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
 
 # %%
