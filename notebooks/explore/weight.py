@@ -1,7 +1,10 @@
 # %%
-import pandas as pd
-from scipy.optimize import minimize, Bounds
 import numpy as np
+import pandas as pd
+from mystic.penalty import quadratic_inequality
+from mystic.solvers import diffev2
+from mystic.tools import random_seed
+# from scipy.optimize import Bounds, minimize
 
 # %%
 random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
@@ -67,127 +70,6 @@ def expect_value(weight, rf, gamma, fac_ndarr):
 
 
 # %%
-def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
-    """
-    针对目标函数计算梯度向量
-
-    Parameter:
-    ----------
-    weight:
-        np.array
-        权重array
-    rf:
-        float
-        下一期的无风险收益
-    gamma:
-        float
-        CRRA 中的gamma
-    fac_df:
-            np.ndarray
-            只保存因子的ndArray，不包含时间列
-
-    Result:
-    -------
-    np.array
-        表示梯度向量的np.array
-    """
-
-    weight = np.asarray(weight)
-    # 计算每个导数的共同部分，命名为gradient_core
-    gradient_core: np.array = (1 + rf + fac_array.dot(weight))**(-gamma)
-    # 在每点（随机数）上，每个梯度分量，是共同部分乘以相应的因子值。
-    gradient_array: np.ndarray = fac_array * gradient_core[:, np.newaxis]
-
-    # 最终在每列上求平均，得到目标函数的梯度向量。
-    return gradient_array.mean(axis=0)
-
-
-# %%
-def hess(weight: np.array, rf, gamma, fac_array: np.ndarray):
-    """
-    针对目标函数计算梯度向量
-
-    Parameter:
-    ----------
-    weight:
-        np.array
-        权重array
-    rf:
-        float
-        下一期的无风险收益
-    gamma:
-        float
-        CRRA 中的gamma
-    fac_df:
-            np.ndarray
-            只保存因子的ndArray，不包含时间列
-
-    Result:
-    -------
-    np.ndarray
-        一个2d array，是对 weight 向量的海塞矩阵，
-    """
-
-    weight = np.asarray(weight)
-    # 首先计算每个海塞矩阵分量需要的共同部分，每一个随机数对应一个，形成一个array
-    hass_core = -gamma * (1 + rf + fac_array.dot(weight))**(-gamma - 1)
-
-    # 计算海塞矩阵分量的后半部分，是fac_array 每一行的向量外积。
-    # 为了使每一行的计算自动归为一个ndarray，将fac_array 升到 3 维，
-    # 乘号前面的分量是一个列向量，后面的分量为行向量，最终在每个分量处对应相乘，得到向量的外积。
-    outer_product_array = fac_array[:, :, np.newaxis] * fac_array[:, np.
-                                                                  newaxis, :]
-    # 每个hass_core 分量乘对应的外积矩阵分量。这里将hass_core 升到 3 维相乘即可。
-    hass_matr_array: np.ndarray = outer_product_array * hass_core[:, np.
-                                                                  newaxis, np.
-                                                                  newaxis]
-
-    # 最终计算每个随机数形成的海塞矩阵的平均值，得到原 objective 函数的海塞矩阵
-    return hass_matr_array.mean(axis=0)
-
-
-# %%
-# 限制条件
-def weight_constrain(weight, mr):
-    """
-    对权重的和施加限制条件，
-    Parameters:
-    -----------
-    weight:
-        list
-        权重序列
-    mr:
-        float
-        杠杆率
-    """
-    return (1 / mr) - weight[0] - (2 * np.sum(weight[1:]))
-
-
-con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
-
-# %%
-bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
-
-# %%
-sol = minimize(fun=expect_value,
-               x0=[0., 0., 0.],
-               args=(rf, 7, first_array),
-               method='trust-constr',
-               jac=jacob,
-               hess=hess,
-               constraints=con,
-               bounds=bnd)
-sol
-
-# %%
-from mystic.solvers import diffev2
-from mystic.monitors import VerboseMonitor
-from mystic.tools import random_seed
-from mystic.penalty import quadratic_inequality
-from mystic.constraints import with_constraint
-from mystic.coupler import inner
-
-
 def penalty1(weight, mr):
     return weight[0] - 2 * (np.sum(weight[1:])) - (1 / mr)
 
@@ -198,12 +80,122 @@ def penalty(weight):
 
 
 bounds = [(0, 1)] * FAC_NUM
+random_seed(101)
 
 result = diffev2(cost=expect_value,
                  args=(rf, 7, first_array),
                  x0=bounds,
                  bounds=bounds,
                  penalty=penalty,
-                 npop=40,
-                 disp=True,
-                 full_output=True)
+                 npop=40)
+result[0]
+
+# # %%
+# def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
+#     """
+#     针对目标函数计算梯度向量
+
+#     Parameter:
+#     ----------
+#     weight:
+#         np.array
+#         权重array
+#     rf:
+#         float
+#         下一期的无风险收益
+#     gamma:
+#         float
+#         CRRA 中的gamma
+#     fac_df:
+#             np.ndarray
+#             只保存因子的ndArray，不包含时间列
+
+#     Result:
+#     -------
+#     np.array
+#         表示梯度向量的np.array
+#     """
+
+#     weight = np.asarray(weight)
+#     # 计算每个导数的共同部分，命名为gradient_core
+#     gradient_core: np.array = (1 + rf + fac_array.dot(weight))**(-gamma)
+#     # 在每点（随机数）上，每个梯度分量，是共同部分乘以相应的因子值。
+#     gradient_array: np.ndarray = fac_array * gradient_core[:, np.newaxis]
+
+#     # 最终在每列上求平均，得到目标函数的梯度向量。
+#     return gradient_array.mean(axis=0)
+
+# # %%
+# def hess(weight: np.array, rf, gamma, fac_array: np.ndarray):
+#     """
+#     针对目标函数计算梯度向量
+
+#     Parameter:
+#     ----------
+#     weight:
+#         np.array
+#         权重array
+#     rf:
+#         float
+#         下一期的无风险收益
+#     gamma:
+#         float
+#         CRRA 中的gamma
+#     fac_df:
+#             np.ndarray
+#             只保存因子的ndArray，不包含时间列
+
+#     Result:
+#     -------
+#     np.ndarray
+#         一个2d array，是对 weight 向量的海塞矩阵，
+#     """
+
+#     weight = np.asarray(weight)
+#     # 首先计算每个海塞矩阵分量需要的共同部分，每一个随机数对应一个，形成一个array
+#     hass_core = -gamma * (1 + rf + fac_array.dot(weight))**(-gamma - 1)
+
+#     # 计算海塞矩阵分量的后半部分，是fac_array 每一行的向量外积。
+#     # 为了使每一行的计算自动归为一个ndarray，将fac_array 升到 3 维，
+#     # 乘号前面的分量是一个列向量，后面的分量为行向量，最终在每个分量处对应相乘，得到向量的外积。
+#     outer_product_array = fac_array[:, :, np.newaxis] * fac_array[:, np.
+#                                                                   newaxis, :]
+#     # 每个hass_core 分量乘对应的外积矩阵分量。这里将hass_core 升到 3 维相乘即可。
+#     hass_matr_array: np.ndarray = outer_product_array * hass_core[:, np.
+#                                                                   newaxis,
+#                                                                   np.newaxis]
+
+#     # 最终计算每个随机数形成的海塞矩阵的平均值，得到原 objective 函数的海塞矩阵
+#     return hass_matr_array.mean(axis=0)
+
+# %%
+# 限制条件
+# def weight_constrain(weight, mr):
+#     """
+#     对权重的和施加限制条件，
+#     Parameters:
+#     -----------
+#     weight:
+#         list
+#         权重序列
+#     mr:
+#         float
+#         杠杆率
+#     """
+#     return (1 / mr) - weight[0] - (2 * np.sum(weight[1:]))
+
+# con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
+
+# # %%
+# bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
+
+# # %%
+# sol = minimize(fun=expect_value,
+#                x0=[0., 0., 0.],
+#                args=(rf, 7, first_array),
+#                method='trust-constr',
+#                jac=jacob,
+#                hess=hess,
+#                constraints=con,
+#                bounds=bnd)
+# sol
