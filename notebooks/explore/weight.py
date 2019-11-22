@@ -2,13 +2,13 @@
 import pandas as pd
 from scipy.optimize import minimize, Bounds
 import numpy as np
-from numba import jit
 
 # %%
 random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
 random_num['date'] = pd.to_datetime(random_num['date'], format='%Y-%m-%d')
 grouped = random_num.groupby("date")
 first_group: pd.DataFrame = grouped.get_group(('2003-01-03'))
+first_array = first_group.drop('date', axis=1).to_numpy()
 
 # %%
 rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
@@ -19,7 +19,7 @@ rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
 
 # %%
 DATE_LIST: list = list(random_num['date'].drop_duplicates())
-FAC_NUM = random_num.shape[1]
+FAC_NUM = random_num.shape[1] - 1
 
 # %%
 # 通过现在所在的date 找到下一个date，并在rf 数据框中找到rf 数据
@@ -30,9 +30,8 @@ rf = rf_df.loc[nxt_date, 'Nrrwkdt']
 
 
 # %%
-@jit(nopython=True)
-def expect_value(weight: np.array, rf: float, gamma: int,
-                 fac_ndarr: np.ndarray):
+# @jit(nopython=True)
+def expect_value(weight, rf, gamma, fac_ndarr):
     """
     计算 CRRA 期望收益
 
@@ -160,16 +159,13 @@ def weight_constrain(weight, mr):
         float
         杠杆率
     """
-    return (1 / mr) - weight[0] - (2 * sum(weight[1:]))
+    return (1 / mr) - weight[0] - (2 * np.sum(weight[1:]))
 
 
 con = {'type': 'ineq', 'fun': weight_constrain, 'args': (0.2, )}
 
 # %%
 bnd = Bounds([0] * (FAC_NUM - 1), [1] * (FAC_NUM - 1))
-
-# %%
-first_array = first_group.drop('date', axis=1).to_numpy()
 
 # %%
 sol = minimize(fun=expect_value,
@@ -181,3 +177,32 @@ sol = minimize(fun=expect_value,
                constraints=con,
                bounds=bnd)
 sol
+
+# %%
+from mystic.solvers import diffev2
+from mystic.monitors import VerboseMonitor
+from mystic.tools import random_seed
+from mystic.penalty import quadratic_inequality
+from mystic.constraints import with_constraint
+from mystic.coupler import inner
+
+
+def penalty1(weight, mr):
+    return weight[0] - 2 * (np.sum(weight[1:])) - (1 / mr)
+
+
+@quadratic_inequality(penalty1, kwds={'mr': 0.2})
+def penalty(weight):
+    return 0.0
+
+
+bounds = [(0, 1)] * FAC_NUM
+
+result = diffev2(cost=expect_value,
+                 args=(rf, 7, first_array),
+                 x0=bounds,
+                 bounds=bounds,
+                 penalty=penalty,
+                 npop=40,
+                 disp=True,
+                 full_output=True)
