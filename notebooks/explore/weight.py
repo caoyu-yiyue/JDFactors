@@ -22,12 +22,12 @@ rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
                                   encoding='utf-16')
 
 # %%
-DATE_LIST: list = list(random_num['date'].drop_duplicates())
+DATE_LIST: list = random_num.index.unique().tolist()
 FAC_NUM = random_num.shape[1] - 1
 
 # %%
 # 通过现在所在的date 找到下一个date，并在rf 数据框中找到rf 数据
-current_date = first_group['date'][0]
+current_date = first_group.index[0]
 nxt_date_idx = DATE_LIST.index(current_date) + 1
 nxt_date = DATE_LIST[nxt_date_idx]
 rf = rf_df.loc[nxt_date, 'Nrrwkdt']
