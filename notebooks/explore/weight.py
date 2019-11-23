@@ -1,7 +1,7 @@
 # %%
 import numpy as np
 import pandas as pd
-from mystic.penalty import quadratic_inequality, quadratic_equality
+from mystic.penalty import linear_inequality, linear_equality
 from mystic.solvers import diffev2
 from mystic.tools import random_seed
 # from scipy.optimize import Bounds, minimize
@@ -79,8 +79,8 @@ def margin_rate_cons(weight, mr):
     return weight[0] - 2 * (np.sum(weight[1:])) - (1 / mr)
 
 
-@quadratic_inequality(margin_rate_cons, kwds={'mr': 0.2})
-@quadratic_equality(weight_sum_cons)
+@linear_inequality(margin_rate_cons, kwds={'mr': 0.2}, k=1e20)
+@linear_equality(weight_sum_cons, k=1e20)
 def penalty(weight):
     return 0.0
 
