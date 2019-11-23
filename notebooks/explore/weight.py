@@ -1,7 +1,7 @@
 # %%
 import numpy as np
 import pandas as pd
-from mystic.penalty import quadratic_inequality
+from mystic.penalty import quadratic_inequality, quadratic_equality
 from mystic.solvers import diffev2
 from mystic.tools import random_seed
 # from scipy.optimize import Bounds, minimize
@@ -23,7 +23,7 @@ rf_df: pd.DataFrame = pd.read_csv('data/raw/csvFiles/TRD_Nrrate.csv',
 
 # %%
 DATE_LIST: list = random_num.index.unique().tolist()
-FAC_NUM = random_num.shape[1] - 1
+FAC_NUM = random_num.shape[1]
 
 # %%
 # 通过现在所在的date 找到下一个date，并在rf 数据框中找到rf 数据
@@ -70,11 +70,17 @@ def expect_value(weight, rf, gamma, fac_ndarr):
 
 
 # %%
-def penalty1(weight, mr):
+def weight_sum_cons(weight):
+    """权重和为1"""
+    return np.sum(weight) - 1
+
+
+def margin_rate_cons(weight, mr):
     return weight[0] - 2 * (np.sum(weight[1:])) - (1 / mr)
 
 
-@quadratic_inequality(penalty1, kwds={'mr': 0.2})
+@quadratic_inequality(margin_rate_cons, kwds={'mr': 0.2})
+@quadratic_equality(weight_sum_cons)
 def penalty(weight):
     return 0.0
 
@@ -88,7 +94,7 @@ result = diffev2(cost=expect_value,
                  bounds=bounds,
                  penalty=penalty,
                  npop=40)
-result[0]
+result
 
 # # %%
 # def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
