@@ -1,9 +1,14 @@
 # %%
 import numpy as np
 import pandas as pd
-from mystic.penalty import linear_inequality, linear_equality
+from mystic.penalty import linear_equality, linear_inequality
 from mystic.solvers import diffev2
-from mystic.tools import random_seed
+from mystic.strategy import Rand1Bin
+from mystic.symbolic import (generate_conditions, generate_constraint,
+                             generate_penalty, generate_solvers, simplify)
+
+# from mystic.tools import random_seed
+
 # from scipy.optimize import Bounds, minimize
 
 # %%
@@ -85,17 +90,38 @@ def penalty(weight):
     return 0.0
 
 
-bounds = [(0, 1)] * FAC_NUM
-random_seed(101)
+# %%
+def equation_str(mr):
+    equations = """
+    x0 + x1 + x2 == 1
+    x0 + 2*(x1 + x2) - (1. / {}) <= 0
+    """.format(mr)
 
+    return equations
+
+
+equation = equation_str(mr=0.2)
+pf = generate_penalty(generate_conditions(equation), k=1e20)
+cf = generate_constraint(generate_solvers(simplify(equation)))
+bounds = [(0, 1)] * FAC_NUM
+# random_seed(101)
+
+
+# %%
 result = diffev2(cost=expect_value,
                  args=(rf, 7, first_array),
                  x0=bounds,
                  bounds=bounds,
-                 penalty=penalty,
-                 npop=40)
+                 gtol=10,
+                 scale=0.1,
+                 constraint=cf,
+                 penalty=pf,
+                 strategy=Rand1Bin,
+                 full_output=True,
+                 npop=1000)
 result
 
+# %%
 # # %%
 # def jacob(weight: np.array, rf, gamma, fac_array: np.ndarray):
 #     """
