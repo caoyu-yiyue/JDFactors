@@ -3,10 +3,14 @@ import numpy as np
 import pandas as pd
 # from mystic import termination
 from mystic.penalty import linear_equality, linear_inequality
-from mystic.solvers import diffev2
+from mystic.pools import SerialPool as Pool
+from mystic.search import Searcher
+from mystic.solvers import BuckshotSolver, PowellDirectionalSolver, diffev2
 from mystic.strategy import Rand1Bin
 from mystic.symbolic import (generate_conditions, generate_constraint,
                              generate_penalty, generate_solvers, simplify)
+from mystic.termination import ChangeOverGeneration as COG
+
 # from mystic.pools import SerialPool as Pool
 
 # from mystic.tools import random_seed
@@ -133,3 +137,25 @@ result
 #                   ExtraArgs=(rf, 7, first_array),
 #                   ScalingFactor=0.7, disp=True)
 # diff_solver.Solution()
+
+# %%
+stop = COG()
+_map = Pool().map
+
+
+def helper(weight):
+    return expect_value(weight, rf=rf, gamma=7, fac_ndarr=first_array)
+
+
+seacher = Searcher(npts=10,
+                   retry=1,
+                   tol=8,
+                   memtol=1,
+                   map=_map,
+                   sprayer=BuckshotSolver,
+                   seeker=PowellDirectionalSolver)
+seacher.Search(model=helper,
+               bounds=bounds,
+               stop=stop,
+               constraints=cf,
+               penalty=pf)
