@@ -5,11 +5,13 @@ import pandas as pd
 from mystic.penalty import linear_equality, linear_inequality
 from mystic.pools import SerialPool as Pool
 from mystic.search import Searcher
-from mystic.solvers import BuckshotSolver, PowellDirectionalSolver, diffev2
+from mystic.solvers import (BuckshotSolver, LatticeSolver,
+                            PowellDirectionalSolver, diffev2)
 from mystic.strategy import Rand1Bin
 from mystic.symbolic import (generate_conditions, generate_constraint,
                              generate_penalty, generate_solvers, simplify)
 from mystic.termination import ChangeOverGeneration as COG
+from mystic.monitors import VerboseMonitor
 
 # from mystic.pools import SerialPool as Pool
 
@@ -159,3 +161,20 @@ seacher.Search(model=helper,
                stop=stop,
                constraints=cf,
                penalty=pf)
+
+
+# %%
+def helper_cost(weight):
+    return expect_value(weight, rf=rf, gamma=7, fac_ndarr=first_array)
+
+
+nbins = 15
+stepmon = VerboseMonitor(5)
+solver = LatticeSolver(dim=FAC_NUM, nbins=nbins)
+solver.SetNestedSolver(PowellDirectionalSolver)
+solver.SetMapper(Pool(4).map)
+solver.SetGenerationMonitor(stepmon)
+solver.SetStrictRanges(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
+solver.SetConstraints(cf)
+solver.SetPenalty(pf)
+solver.Solve(helper_cost, termination=COG(), disp='all')
