@@ -18,7 +18,7 @@ from mystic.monitors import VerboseMonitor
 # from mystic.tools import random_seed
 
 # %%
-random_num: pd.DataFrame = pd.read_feather('data/interim/random_num.feather')
+random_num: pd.DataFrame = pd.read_feather('data/interim/gjrGARCH_random_num.feather')
 random_num['date'] = pd.to_datetime(random_num['date'], format='%Y-%m-%d')
 random_num.set_index('date', inplace=True)
 grouped = random_num.groupby("date")
