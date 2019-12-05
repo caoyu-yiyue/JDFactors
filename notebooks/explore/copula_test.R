@@ -156,7 +156,7 @@ gen_multi_dist_random <- function(param_df, n) {
   cls <- makeCluster(4, type = "FORK")
   doParallel::registerDoParallel(cls, cores = 2)
   multi_dist_random_num <- foreach(i = 1:row_n, .combine = "rbind") %dopar% {
-    randomNum_tCop_stMargin(param_df[1, ], n = n)
+    randomNum_tCop_stMargin(param_df[i, ], n = n)
   }
   stopCluster(cls)
   
