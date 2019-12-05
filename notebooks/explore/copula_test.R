@@ -114,7 +114,7 @@ save(merged_params, file = merged_params_path)
 load(merged_params_path)
 
 ######### 计算最佳权重 ###############
-FAC_NAMES <- names(arch_roll_dist_df)
+FAC_NAMES <- names(week_fac)
 randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
   # 根据保存边际分布参数与copula 参数的行，生成联合分布的随机数
   # current_row: 保存参数的行。这里apply 会传入一个numeric vector
@@ -131,11 +131,12 @@ randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
   )
   
   # 指定边际分布的参数。对每个FAC_NAME 找到其在合并参数总表中的参数列。
-  # 最后返回的list 每个对象都命名为"dp"
+  # 最后返回的结构为list-list$dp，每个名为dp 的个体下是一个vector，保存了四个skew-t 参数。
   margin_param_list <- lapply(FAC_NAMES, FUN = function(name) {
-    current_row[, grep(name, colnames(current_row))]
+    row_single_fac <- current_row[, grep(name, colnames(current_row))]
+    list_single_fac <- list(dp = row_single_fac)
+    return(list_single_fac)
   })
-  names(margin_param_list) <- rep("dp", times = length(FAC_NAMES))
   
   # 通过t_copula 和skew t 边际分布生成多维分布，从而得到随机数。
   # 返回的结果起名为FAC_NAMES
