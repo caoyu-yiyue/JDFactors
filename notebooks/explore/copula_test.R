@@ -17,7 +17,8 @@ year_end_idx <- endpoints(week_fac, on = "year")
 
 
 # garch 模型的指定
-var_mdl <- list(model = "gjrGARCH", garchOrder = c(1, 1))
+garch_type <- "eGARCH"
+var_mdl <- list(model = garch_type, garchOrder = c(1, 1))
 mean_mdl <- list(armaOrder = c(3, 0))
 archSpec <- ugarchspec(variance.model = var_mdl, mean.model = mean_mdl, distribution.model = "sstd")
 
@@ -39,8 +40,9 @@ arch_roll_dist_df <- lapply(arch_roll, FUN = function(x) {
 })
 
 # 保存roll garch 的结果
-# save(arch_roll, arch_roll_dist_df, file = "data/interim/arch_roll_dist.Rda")
-load(file = "data/interim/arch_roll_dist.Rda")
+arch_roll_dist_path <- paste("data/interim/", garch_type, "_arch_roll_dist.Rda", sep = "")
+save(arch_roll, arch_roll_dist_df, file = arch_roll_dist_path)
+load(file = arch_roll_dist_path)
 
 arch_roll_dist_df <- lapply(arch_roll_dist_df, function(x) {
   x[, 1:4]
@@ -107,8 +109,9 @@ margin_params_xts <- merge_margin_dist_params(margin_params_list = roll_dist_dp)
 merged_params <- merge(margin_params_xts, cop_params, join = "outer")
 # 每一年使用初年估计的copula 参数，所以使用其向前填充
 merged_params <- na.locf(merged_params)
-save(merged_params, file = "data/interim/merged_params.Rda")
-
+merged_params_path <- paste("data/interim/", garch_type, "_merged_params.Rda", sep = "")
+save(merged_params, file = merged_params_path)
+load(merged_params_path)
 
 ######### 计算最佳权重 ###############
 FAC_NAMES <- names(arch_roll_dist_df)
@@ -169,8 +172,9 @@ random_num_result <- gen_multi_dist_random(param_df = merged_params, n =50000)
 
 # 随机数保存为feather 文件
 library(feather)
+random_num_path <- paste("data/interim/", garch_type, "_random_num.feather", sep = "")
 write_feather(as.data.frame(random_num_result),
-              path = "data/interim/random_num.feather")
+              path = random_num_path)
 
 
 # # 使用生成的随机数最大化权重值
