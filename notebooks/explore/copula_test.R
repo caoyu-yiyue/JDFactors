@@ -150,7 +150,7 @@ randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 10000) {
 
 # test_random_num <- randomNum_tCop_stMargin(merged_params[1, ], seed = 101)
 library(doSNOW)
-gen_multi_dist_random <- function(param_df, n) {
+gen_multi_dist_random <- function(param_df, seed, n, save_file = FALSE) {
   row_n <- nrow(param_df)
   pb <- txtProgressBar(max = row_n, style = 3)
   progress <- function(n) setTxtProgressBar(pb, n)
@@ -162,7 +162,7 @@ gen_multi_dist_random <- function(param_df, n) {
   multi_dist_random_num <- foreach(i = 1:row_n, .combine = "rbind", .packages = c("xts", "copula", "sn"), 
                                    .export = c("randomNum_tCop_stMargin", "FAC_NAMES", "merged_params"),
                                    .options.snow = opts) %dopar% {
-    randomNum_tCop_stMargin(param_df[i, ], n = n)
+    randomNum_tCop_stMargin(param_df[i, ], seed = seed, n = n)
   }
   close(pb)
   stopCluster(cls)
@@ -172,17 +172,21 @@ gen_multi_dist_random <- function(param_df, n) {
   date <- rep(index(param_df), each = n)
   result_df <- cbind(date, random_num_df)
   
+  if(save_file) {
+    random_num_path <- paste("data/interim/", garch_type, "_random_num_", seed, ".Rda", sep = "")
+    save(random_num_result, file = random_num_path)
+  }
   return(result_df)
 }
 
-random_num_result <- gen_multi_dist_random(param_df = merged_params, n =10000)
 
-# 随机数保存为feather 文件
+seeds = c(101, 102, 103, 104)
+random_num_result <- gen_multi_dist_random(param_df = merged_params, seed = seeds[2],
+                                           n = 10, save_file = TRUE)
+
+
+
 library(feather)
-random_num_path <- paste("data/interim/", garch_type, "_random_num_101.Rda", sep = "")
-write_feather(as.data.frame(random_num_result),
-              path = random_num_path)
-
 
 # # 使用生成的随机数最大化权重值
 # library(PortfolioAnalytics)
