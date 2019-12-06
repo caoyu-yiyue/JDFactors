@@ -115,7 +115,7 @@ load(merged_params_path)
 
 ######### 计算最佳权重 ###############
 FAC_NAMES <- names(week_fac)
-randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
+randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 10000) {
   # 根据保存边际分布参数与copula 参数的行，生成联合分布的随机数
   # current_row: 保存参数的行。这里apply 会传入一个numeric vector
   # seed: 生成随机数的seed，默认为101。
@@ -149,18 +149,24 @@ randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 100000) {
 }
 
 # test_random_num <- randomNum_tCop_stMargin(merged_params[1, ], seed = 101)
-
+library(doSNOW)
 gen_multi_dist_random <- function(param_df, n) {
   row_n <- nrow(param_df)
+  pb <- txtProgressBar(max = row_n, style = 3)
+  progress <- function(n) setTxtProgressBar(pb, n)
+  opts <- list(progress = progress)
   
   # 使用并行循环计算随机数（按行数循环）
-  cls <- makeCluster(4, type = "FORK")
-  doParallel::registerDoParallel(cls, cores = 2)
-  multi_dist_random_num <- foreach(i = 1:row_n, .combine = "rbind") %dopar% {
+  cls <- makeCluster(4, type = "SOCK")
+  registerDoSNOW(cls)
+  multi_dist_random_num <- foreach(i = 1:row_n, .combine = "rbind", .packages = c("xts", "copula", "sn"), 
+                                   .export = c("randomNum_tCop_stMargin", "FAC_NAMES", "merged_params"),
+                                   .options.snow = opts) %dopar% {
     randomNum_tCop_stMargin(param_df[i, ], n = n)
   }
+  close(pb)
   stopCluster(cls)
-  
+
   # 加入date 列，成为一个data.frame 然后输出
   random_num_df <- as.data.frame(multi_dist_random_num)
   date <- rep(index(param_df), each = n)
@@ -169,11 +175,11 @@ gen_multi_dist_random <- function(param_df, n) {
   return(result_df)
 }
 
-random_num_result <- gen_multi_dist_random(param_df = merged_params, n =50000)
+random_num_result <- gen_multi_dist_random(param_df = merged_params, n =10000)
 
 # 随机数保存为feather 文件
 library(feather)
-random_num_path <- paste("data/interim/", garch_type, "_random_num.feather", sep = "")
+random_num_path <- paste("data/interim/", garch_type, "_random_num_101.Rda", sep = "")
 write_feather(as.data.frame(random_num_result),
               path = random_num_path)
 
