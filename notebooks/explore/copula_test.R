@@ -173,20 +173,37 @@ gen_multi_dist_random <- function(param_df, seed, n, save_file = FALSE) {
   result_df <- cbind(date, random_num_df)
   
   if(save_file) {
-    random_num_path <- paste("data/interim/", garch_type, "_random_num_", seed, ".Rda", sep = "")
-    save(random_num_result, file = random_num_path)
+    random_num_path <- paste("data/interim/", garch_type, "_random_num_", seed, ".Rds", sep = "")
+    saveRDS(random_num_result, file = random_num_path)
   }
   return(result_df)
 }
 
-
+# 随机数的生成，浪费时间！！！！！！
 seeds = c(101, 102, 103, 104)
-random_num_result <- gen_multi_dist_random(param_df = merged_params, seed = seeds[2],
-                                           n = 10, save_file = TRUE)
+random_num_result_1 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[1],
+                                           n = 10000, save_file = TRUE)
+random_num_result_2 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[2],
+                                           n = 10000, save_file = TRUE)
+random_num_result_3 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[3],
+                                            n = 10000, save_file = TRUE)
+random_num_result_4 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[4],
+                                           n = 10000, save_file = TRUE)
 
+# 合并分开的随机数结果，并保存为一个feather 结果 #
+path_patter <- paste(garch_type, "_random_num_\\d+.Rds", sep = "")
+random_num_paths <- list.files("data/interim", pattern = path_patter)
+random_num_list <- lapply(random_num_paths, FUN = function(path) {
+  full_path <- paste("data/interim/", path, sep = "")
+  result <- readRDS(full_path)
+  return(result)
+})
+binded_random_df <- Reduce(f = function(top, bott) {rbind(top, bott)}, x = random_num_list)
 
-
+# 保存为.feather
 library(feather)
+binded_path <- paste("data/interim/", garch_type, "_random_num_all.feather")
+write_feather(x = binded_random_df, path = "data/interim")
 
 # # 使用生成的随机数最大化权重值
 # library(PortfolioAnalytics)
