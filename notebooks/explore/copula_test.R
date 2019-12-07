@@ -224,12 +224,18 @@ random_num_list <- lapply(random_num_paths, FUN = function(path) {
   result <- readRDS(full_path)
   return(result)
 })
+
+# date 列保存为Date 类
+random_num_list <- lapply(random_num_list, FUN = function(df) { 
+  df$date <- lubridate::ymd(df$date)
+  return(df)
+})
 binded_random_df <- Reduce(f = function(top, bott) {rbind(top, bott)}, x = random_num_list)
 
 # 保存为.feather
 library(feather)
 binded_path <- paste("data/interim/", garch_type, "_random_num_all.feather")
-write_feather(x = binded_random_df, path = "data/interim")
+write_feather(x = binded_random_df, path = binded_path)
 
 
 
