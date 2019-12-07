@@ -113,9 +113,14 @@ merged_params_path <- paste("data/interim/", garch_type, "_merged_params.Rda", s
 save(merged_params, file = merged_params_path)
 load(merged_params_path)
 
-######### 计算最佳权重 ###############
+
+
+
+########################################################################################
+#########                          生成随机数                            ###############
+########################################################################################
 FAC_NAMES <- names(week_fac)
-randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 10000) {
+gen_mvdcs_tCop_stMargin <- function(current_row) {
   # 根据保存边际分布参数与copula 参数的行，生成联合分布的随机数
   # current_row: 保存参数的行。这里apply 会传入一个numeric vector
   # seed: 生成随机数的seed，默认为101。
@@ -126,14 +131,14 @@ randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 10000) {
   
   # 指定t_copula 对象
   t_cop_row <- tCopula(
-    param = current_row[, c("rho.1", "rho.2", "rho.3")],
-    dim = length(FAC_NAMES), df = current_row[, "df"], dispstr = "un"
+    param = current_row[c("rho.1", "rho.2", "rho.3")],
+    dim = length(FAC_NAMES), df = current_row["df"], dispstr = "un"
   )
   
   # 指定边际分布的参数。对每个FAC_NAME 找到其在合并参数总表中的参数列。
   # 最后返回的结构为list-list$dp，每个名为dp 的个体下是一个vector，保存了四个skew-t 参数。
   margin_param_list <- lapply(FAC_NAMES, FUN = function(name) {
-    row_single_fac <- current_row[, grep(name, colnames(current_row))]
+    row_single_fac <- current_row[grep(name, names(current_row))]
     list_single_fac <- list(dp = row_single_fac)
     return(list_single_fac)
   })
@@ -141,54 +146,75 @@ randomNum_tCop_stMargin <- function(current_row, seed = 101, n = 10000) {
   # 通过t_copula 和skew t 边际分布生成多维分布，从而得到随机数。
   # 返回的结果起名为FAC_NAMES
   row_mvdc <- mvdc(copula = t_cop_row, margins = c("st", "st", "st"), paramMargins = margin_param_list)
-  set.seed(seed = seed)
-  multidis_random_nums <- rMvdc(n = n, mvdc = row_mvdc)
-  colnames(multidis_random_nums) <- FAC_NAMES
   
-  return(multidis_random_nums)
+  return(row_mvdc)
 }
+
+mvdc_list <- apply(merged_params, gen_mvdcs_tCop_stMargin, MARGIN = 1)
 
 # test_random_num <- randomNum_tCop_stMargin(merged_params[1, ], seed = 101)
 library(doSNOW)
-gen_multi_dist_random <- function(param_df, seed, n, save_file = FALSE) {
-  row_n <- nrow(param_df)
+gen_multi_dist_random <- function(mvdcs, seed, n, save_file = FALSE) {
+  row_n <- length(mvdcs)
   pb <- txtProgressBar(max = row_n, style = 3)
   progress <- function(n) setTxtProgressBar(pb, n)
   opts <- list(progress = progress)
   
   # 使用并行循环计算随机数（按行数循环）
-  cls <- makeCluster(4, type = "SOCK")
-  registerDoSNOW(cls)
+  
   multi_dist_random_num <- foreach(i = 1:row_n, .combine = "rbind", .packages = c("xts", "copula", "sn"), 
-                                   .export = c("randomNum_tCop_stMargin", "FAC_NAMES", "merged_params"),
+                                   .export = c("FAC_NAMES"),
                                    .options.snow = opts) %dopar% {
-    randomNum_tCop_stMargin(param_df[i, ], seed = seed, n = n)
+    set.seed(n)
+    multidis_random_nums <- rMvdc(n = n, mvdc = mvdcs[[i]])
+    colnames(multidis_random_nums) <- FAC_NAMES
+    
+    return(multidis_random_nums)
   }
   close(pb)
-  stopCluster(cls)
 
   # 加入date 列，成为一个data.frame 然后输出
   random_num_df <- as.data.frame(multi_dist_random_num)
-  date <- rep(index(param_df), each = n)
+  date <- rep(names(mvdcs), each = n)
   result_df <- cbind(date, random_num_df)
   
   if(save_file) {
     random_num_path <- paste("data/interim/", garch_type, "_random_num_", seed, ".Rds", sep = "")
-    saveRDS(random_num_result, file = random_num_path)
+    saveRDS(result_df, file = random_num_path)
   }
   return(result_df)
 }
 
+
 # 随机数的生成，浪费时间！！！！！！
-seeds = c(101, 102, 103, 104)
-random_num_result_1 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[1],
-                                           n = 10000, save_file = TRUE)
-random_num_result_2 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[2],
-                                           n = 10000, save_file = TRUE)
-random_num_result_3 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[3],
-                                            n = 10000, save_file = TRUE)
-random_num_result_4 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[4],
-                                           n = 10000, save_file = TRUE)
+seeds = c(101, 304, 10001, 100001, 1000001)
+# random_num_result_1 <- gen_multi_dist_random(param_df = merged_params, seed = seeds[1],
+#                                            n = 10000, save_file = TRUE)
+
+# 开一个结果df，同时给列命名
+result_rands <- data.frame(matrix(nrow = 0, ncol = length(FAC_NAMES)))
+colnames(result_rands) <- FAC_NAMES
+
+inte_num <- 9 # 总共需要计算多少
+now = 0 # 目前已经计算了多少
+# 从某个seed 出发，加上一个总数，在inte_num 的范围内生出新seed 做循环
+for(s in (seeds[3] + now):(seeds[3] + inte_num)) {
+  # 打印当前的循环个数，以及完成的百分比
+  counter <- s - seeds[3]
+  print(sprintf("NO. %d, %.2f%%", counter + 1, (counter * 100) / inte_num))
+ 
+  # 开一个cluster，然后并行在mvdc_list 上循环生成随机数1000 个。
+  cls <- makeCluster(4, type = "SOCK")
+  registerDoSNOW(cls)
+  part_rands <- gen_multi_dist_random(mvdcs = mvdc_list, seed = s,
+                                       n = 1000, save_file = FALSE)
+  stopCluster(cls)
+  gc()
+  # 与结果df 合并，从而将结果输出出来。
+  result_rands <- rbind(result_rands, part_rands)
+}
+saveRDS(result_rands, file = paste("data/interim/", garch_type, "_random_num_", seeds[3], ".Rds", sep = ""))
+
 
 # 合并分开的随机数结果，并保存为一个feather 结果 #
 path_patter <- paste(garch_type, "_random_num_\\d+.Rds", sep = "")
@@ -204,6 +230,18 @@ binded_random_df <- Reduce(f = function(top, bott) {rbind(top, bott)}, x = rando
 library(feather)
 binded_path <- paste("data/interim/", garch_type, "_random_num_all.feather")
 write_feather(x = binded_random_df, path = "data/interim")
+
+
+
+
+
+
+
+
+
+
+
+
 
 # # 使用生成的随机数最大化权重值
 # library(PortfolioAnalytics)
