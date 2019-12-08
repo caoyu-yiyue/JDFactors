@@ -141,7 +141,7 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty):
     solver.SetStrictRanges(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
     solver.SetConstraints(constraint)
     solver.SetPenalty(penalty)
-    solver.Solve(helper_cost, termination=COG(1e-04, 15), disp=False)
+    solver.Solve(helper_cost, termination=COG(1e-07, 15), disp=False)
 
     weight = solver.Solution()
     func_v = _expect_value(weight, rf, gamma, fac_array)
