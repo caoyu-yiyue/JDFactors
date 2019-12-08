@@ -179,7 +179,7 @@ def main(seed, nbins, gamma):
         })
         return weights_applyed
 
-    merged_dd: dd.DataFrame = dd.from_pandas(MERGED_DF, npartitions=2)
+    merged_dd: dd.DataFrame = dd.from_pandas(MERGED_DF, npartitions=4)
     meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
     meta_dict.update({'seed': 'i8', 'nbins': 'i8'})
 
