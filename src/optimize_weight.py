@@ -159,7 +159,23 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
 @click.option('--seed', type=int)
 @click.option('--nbins', type=int)
 @click.option('--gamma', type=int, default=7)
-def main(seed, nbins, gamma):
+@click.option('--half', type=click.Choice(['first', 'second']))
+def main(seed, nbins, gamma, half):
+    day_len = len(DATE_LIST)
+    split_point = day_len // 2
+    if half == 'first':
+        half_dates = DATE_LIST[:split_point]
+    elif half == 'second':
+        half_dates = DATE_LIST[split_point:]
+
+    if __debug__:
+        use_df = RANDOM_NUM.loc[half_dates[0:8], ]
+    else:
+        use_df = RANDOM_NUM.loc[half_dates, :]
+
+    rf_df = read_rf_df()
+    merged_df = join_rf_df(random_num_df=use_df, rf_df=rf_df, rf_type='week')
+
     equation = equation_str(mr=0.2)
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
@@ -173,13 +189,10 @@ def main(seed, nbins, gamma):
             constraint=cf,
             penalty=pf,
             seed=seed)
-        weights_applyed = weights_applyed.astype({
-            'seed': 'i8',
-            'nbins': 'i8'
-        })
+        weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
         return weights_applyed
 
-    merged_dd: dd.DataFrame = dd.from_pandas(MERGED_DF, npartitions=4)
+    merged_dd: dd.DataFrame = dd.from_pandas(merged_df, npartitions=4)
     meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
     meta_dict.update({'seed': 'i8', 'nbins': 'i8'})
 
@@ -190,21 +203,15 @@ def main(seed, nbins, gamma):
 
     # best_weight: pd.DataFrame = dd_applyed.compute()
     best_weights.to_pickle(
-        "data/interim/best_weight_s{}_nb{}_ga{}.pickle".format(
-            seed, nbins, gamma))
+        "data/interim/best_weight_s{}_nb{}_ga{}_half{}.pickle".format(
+            seed, nbins, gamma, half))
 
 
 # %%
 if __name__ == "__main__":
-    random_num = read_simul_random_df()
-    DATE_LIST: list = random_num.index.unique().tolist()
-    FAC_NAME: list = random_num.columns.to_list()
-    FAC_NUM = random_num.shape[1]
+    RANDOM_NUM = read_simul_random_df()
+    DATE_LIST: list = RANDOM_NUM.index.unique().tolist()
+    FAC_NAME: list = RANDOM_NUM.columns.to_list()
+    FAC_NUM = RANDOM_NUM.shape[1]
 
-    rf_df = read_rf_df()
-    MERGED_DF = join_rf_df(random_num_df=random_num,
-                           rf_df=rf_df,
-                           rf_type='week')
-    if __debug__:
-        MERGED_DF = MERGED_DF.loc[DATE_LIST[0:8], :]
     main()
