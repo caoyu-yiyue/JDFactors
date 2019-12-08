@@ -156,7 +156,8 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
 @click.command()
 @click.option('--seed', type=int)
 @click.option('--nbins', type=int)
-def main(seed, nbins):
+@click.option('--gamma', type=int, default=7)
+def main(seed, nbins, gamma):
     equation = equation_str(mr=0.2)
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
@@ -169,7 +170,7 @@ def main(seed, nbins):
         opti_latti_pow,
         # meta=meta_dict,
         nbins=nbins,
-        gamma=7,
+        gamma=gamma,
         constraint=cf,
         penalty=pf,
         seed=seed)
