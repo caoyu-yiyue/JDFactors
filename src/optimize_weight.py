@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 import click
+from tqdm import tqdm
 from mystic.solvers import LatticeSolver, PowellDirectionalSolver
 from mystic.symbolic import (generate_conditions, generate_constraint,
                              generate_penalty, generate_solvers, simplify)
@@ -127,7 +128,7 @@ def equation_str(mr):
 
 
 def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
-    print(df.name)
+    # print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
     # fac_names = core_fac.columns
@@ -180,7 +181,8 @@ def main(seed, nbins, gamma, half):
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
 
-    weights_applyed: pd.DataFrame = merged_df.groupby('date').apply(
+    tqdm.pandas()
+    weights_applyed: pd.DataFrame = merged_df.groupby('date').progress_apply(
         opti_latti_pow,
         # meta=meta_dict,
         nbins=nbins,
