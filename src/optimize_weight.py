@@ -174,14 +174,14 @@ def main(seed, nbins, gamma):
             penalty=pf,
             seed=seed)
         weights_applyed = weights_applyed.astype({
-            'seed': 'int32',
-            'nbins': 'int32'
+            'seed': 'i8',
+            'nbins': 'i8'
         })
         return weights_applyed
 
     merged_dd: dd.DataFrame = dd.from_pandas(MERGED_DF, npartitions=2)
     meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
-    meta_dict.update({'seed': 'int32', 'nbins': 'int32'})
+    meta_dict.update({'seed': 'i8', 'nbins': 'i8'})
 
     dd_weights_set = merged_dd.map_partitions(func=grouped_apply_opt_part,
                                               meta=meta_dict)
