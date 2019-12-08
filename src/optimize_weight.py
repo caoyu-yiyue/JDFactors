@@ -1,5 +1,6 @@
 # %%
-# import dask.dataframe as dd
+import dask.dataframe as dd
+from dask.diagnostics import ProgressBar
 import numpy as np
 import pandas as pd
 import click
@@ -126,7 +127,7 @@ def equation_str(mr):
 
 
 def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
-    print(df.name)
+    # print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
     # fac_names = core_fac.columns
@@ -162,25 +163,33 @@ def main(seed, nbins, gamma):
     equation = equation_str(mr=0.2)
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
-    # bounds = [(0, 1)] * FAC_NUM
 
-    # merged_dd = dd.from_pandas(merged_rf, npartitions=4)
-    # meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
+    def grouped_apply_opt_part(part_df):
+        weights_applyed: pd.DataFrame = part_df.groupby('date').apply(
+            opti_latti_pow,
+            # meta=meta_dict,
+            nbins=nbins,
+            gamma=gamma,
+            constraint=cf,
+            penalty=pf,
+            seed=seed)
+        weights_applyed = weights_applyed.astype({
+            'seed': 'int32',
+            'nbins': 'int32'
+        })
+        return weights_applyed
 
-    weights_applyed: pd.DataFrame = MERGED_DF.groupby('date').apply(
-        opti_latti_pow,
-        # meta=meta_dict,
-        nbins=nbins,
-        gamma=gamma,
-        constraint=cf,
-        penalty=pf,
-        seed=seed)
+    merged_dd: dd.DataFrame = dd.from_pandas(MERGED_DF, npartitions=2)
+    meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
+    meta_dict.update({'seed': 'int32', 'nbins': 'int32'})
+
+    dd_weights_set = merged_dd.map_partitions(func=grouped_apply_opt_part,
+                                              meta=meta_dict)
+    with ProgressBar():
+        best_weights = dd_weights_set.compute()
+
     # best_weight: pd.DataFrame = dd_applyed.compute()
-    weights_applyed = weights_applyed.astype({
-        'seed': 'int32',
-        'nbins': 'int32'
-    })
-    weights_applyed.to_pickle(
+    best_weights.to_pickle(
         "data/interim/best_weight_s{}_nb{}_ga{}.pickle".format(
             seed, nbins, gamma))
 
@@ -197,5 +206,5 @@ if __name__ == "__main__":
                            rf_df=rf_df,
                            rf_type='week')
     if __debug__:
-        MERGED_DF = MERGED_DF.loc[DATE_LIST[0:3], :]
+        MERGED_DF = MERGED_DF.loc[DATE_LIST[0:8], :]
     main()
