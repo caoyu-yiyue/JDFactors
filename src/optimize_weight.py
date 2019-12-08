@@ -2,16 +2,17 @@
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+import click
 from mystic.solvers import LatticeSolver, PowellDirectionalSolver
 from mystic.symbolic import (generate_conditions, generate_constraint,
                              generate_penalty, generate_solvers, simplify)
 from mystic.termination import ChangeOverGeneration as COG
 from mystic.tools import random_seed
-# from mystic.pools import SerialPool as Pool
+from mystic.pools import SerialPool as Pool
 # from distributed import Client
 
 
-def read_simul_random_df(file='data/interim/eGARCH_random_num.feather'):
+def read_simul_random_df(file='data/interim/ eGARCH _random_num_all.feather'):
     """
     读取从r 语言模拟生成的多维随机数
     Parameters:
@@ -135,7 +136,7 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty):
 
     solver = LatticeSolver(dim=FAC_NUM, nbins=nbins)
     solver.SetNestedSolver(PowellDirectionalSolver)
-    # solver.SetMapper(Pool(4).map)
+    solver.SetMapper(Pool(2).map)
     # solver.SetGenerationMonitor(stepmon)
     solver.SetStrictRanges(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
     solver.SetConstraints(constraint)
@@ -151,6 +152,31 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty):
     return result
 
 
+@click.command()
+@click.option('--seed', type=int)
+@click.option('--bin', type=int)
+def main(seed, bin):
+    equation = equation_str(mr=0.2)
+    pf = generate_penalty(generate_conditions(equation), k=1e20)
+    cf = generate_constraint(generate_solvers(simplify(equation)))
+    # bounds = [(0, 1)] * FAC_NUM
+
+    random_seed(seed)
+
+    # merged_dd = dd.from_pandas(merged_rf, npartitions=4)
+    # meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
+
+    weights_applyed: dd.DataFrame = MERGED_DF.groupby('date').apply(
+        opti_latti_pow,
+        # meta=meta_dict,
+        nbins=5,
+        gamma=7,
+        constraint=cf,
+        penalty=pf)
+    # best_weight: pd.DataFrame = dd_applyed.compute()
+    weights_applyed.to_pickle("data/interim/best_weight.pickle")
+
+
 # %%
 if __name__ == "__main__":
     random_num = read_simul_random_df()
@@ -159,25 +185,7 @@ if __name__ == "__main__":
     FAC_NUM = random_num.shape[1]
 
     rf_df = read_rf_df()
-    merged_rf = join_rf_df(random_num_df=random_num,
+    MERGED_DF = join_rf_df(random_num_df=random_num,
                            rf_df=rf_df,
                            rf_type='week')
-
-    equation = equation_str(mr=0.2)
-    pf = generate_penalty(generate_conditions(equation), k=1e20)
-    cf = generate_constraint(generate_solvers(simplify(equation)))
-    # bounds = [(0, 1)] * FAC_NUM
-
-    random_seed(1008)
-
-    merged_dd = dd.from_pandas(merged_rf, npartitions=4)
-    meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
-
-    dd_applyed: dd.DataFrame = merged_dd.groupby('date').apply(opti_latti_pow,
-                                                               meta=meta_dict,
-                                                               nbins=5,
-                                                               gamma=7,
-                                                               constraint=cf,
-                                                               penalty=pf)
-    best_weight: pd.DataFrame = dd_applyed.compute()
-    best_weight.to_pickle("data/interim/best_weight.pickle")
+    main()
