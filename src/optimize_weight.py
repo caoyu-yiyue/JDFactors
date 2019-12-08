@@ -1,5 +1,5 @@
 # %%
-import dask.dataframe as dd
+# import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import click
@@ -12,7 +12,7 @@ from mystic.pools import SerialPool as Pool
 # from distributed import Client
 
 
-def read_simul_random_df(file='data/interim/ eGARCH _random_num_all.feather'):
+def read_simul_random_df(file='data/interim/eGARCH_random_num_all.feather'):
     """
     读取从r 语言模拟生成的多维随机数
     Parameters:
@@ -124,12 +124,13 @@ def equation_str(mr):
     return equations
 
 
-def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty):
+def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
     print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
     # fac_names = core_fac.columns
     rf = df['rf'][0]
+    random_seed(s=seed)
 
     def helper_cost(weight):
         return _expect_value(weight, rf=rf, gamma=7, fac_ndarr=fac_array)
@@ -146,34 +147,37 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty):
     weight = solver.Solution()
     func_v = _expect_value(weight, rf, gamma, fac_array)
 
-    values = np.append(weight, func_v)
-    idx = FAC_NAME + ['func_v']
+    values = np.append(arr=weight, values=[func_v, seed, nbins])
+    idx = FAC_NAME + ['func_v', 'seed', 'nbins']
     result = pd.Series(data=values, index=idx)
     return result
 
 
 @click.command()
 @click.option('--seed', type=int)
-@click.option('--bin', type=int)
-def main(seed, bin):
+@click.option('--nbins', type=int)
+def main(seed, nbins):
     equation = equation_str(mr=0.2)
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
     # bounds = [(0, 1)] * FAC_NUM
 
-    random_seed(seed)
-
     # merged_dd = dd.from_pandas(merged_rf, npartitions=4)
     # meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
 
-    weights_applyed: dd.DataFrame = MERGED_DF.groupby('date').apply(
+    weights_applyed: pd.DataFrame = MERGED_DF.groupby('date').apply(
         opti_latti_pow,
         # meta=meta_dict,
-        nbins=5,
+        nbins=nbins,
         gamma=7,
         constraint=cf,
-        penalty=pf)
+        penalty=pf,
+        seed=seed)
     # best_weight: pd.DataFrame = dd_applyed.compute()
+    weights_applyed = weights_applyed.astype({
+        'seed': 'int32',
+        'nbins': 'int32'
+    })
     weights_applyed.to_pickle("data/interim/best_weight.pickle")
 
 
@@ -188,4 +192,6 @@ if __name__ == "__main__":
     MERGED_DF = join_rf_df(random_num_df=random_num,
                            rf_df=rf_df,
                            rf_type='week')
+    if __debug__:
+        MERGED_DF = MERGED_DF.loc[DATE_LIST[0:3], :]
     main()
