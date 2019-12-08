@@ -179,7 +179,9 @@ def main(seed, nbins, gamma):
         'seed': 'int32',
         'nbins': 'int32'
     })
-    weights_applyed.to_pickle("data/interim/best_weight.pickle")
+    weights_applyed.to_pickle(
+        "data/interim/best_weight_s{}_nb{}_ga{}.pickle".format(
+            seed, nbins, gamma))
 
 
 # %%
