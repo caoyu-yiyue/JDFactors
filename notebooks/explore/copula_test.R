@@ -234,7 +234,7 @@ binded_random_df <- Reduce(f = function(top, bott) {rbind(top, bott)}, x = rando
 
 # 保存为.feather
 library(feather)
-binded_path <- paste("data/interim/", garch_type, "_random_num_all.feather")
+binded_path <- paste("data/interim/", garch_type, "_random_num_all.feather", sep = "")
 write_feather(x = binded_random_df, path = binded_path)
 
 
