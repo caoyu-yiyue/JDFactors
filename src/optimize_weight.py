@@ -28,6 +28,7 @@ def read_simul_random_df(file='data/interim/eGARCH_random_num_all.feather'):
     random_num: pd.DataFrame = pd.read_feather(file)
     random_num['date'] = pd.to_datetime(random_num['date'], format='%Y-%m-%d')
     random_num.set_index('date', inplace=True)
+    random_num.sort_index(inplace=True)
     return random_num
 
 
