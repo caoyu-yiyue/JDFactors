@@ -1,6 +1,6 @@
 # %%
-import dask.dataframe as dd
-from dask.diagnostics import ProgressBar
+# import dask.dataframe as dd
+# from dask.diagnostics import ProgressBar
 import numpy as np
 import pandas as pd
 import click
@@ -127,7 +127,7 @@ def equation_str(mr):
 
 
 def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
-    # print(df.name)
+    print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
     # fac_names = core_fac.columns
@@ -180,29 +180,30 @@ def main(seed, nbins, gamma, half):
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
 
-    def grouped_apply_opt_part(part_df):
-        weights_applyed: pd.DataFrame = part_df.groupby('date').apply(
-            opti_latti_pow,
-            # meta=meta_dict,
-            nbins=nbins,
-            gamma=gamma,
-            constraint=cf,
-            penalty=pf,
-            seed=seed)
-        weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
-        return weights_applyed
+    weights_applyed: pd.DataFrame = merged_df.groupby('date').apply(
+        opti_latti_pow,
+        # meta=meta_dict,
+        nbins=nbins,
+        gamma=gamma,
+        constraint=cf,
+        penalty=pf,
+        seed=seed)
+    weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
 
-    merged_dd: dd.DataFrame = dd.from_pandas(merged_df, npartitions=4)
-    meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
-    meta_dict.update({'seed': 'i8', 'nbins': 'i8'})
+    # merged_dd: dd.DataFrame = dd.from_pandas(merged_df, npartitions=2)
+    # meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
+    # meta_dict.update({'seed': 'i8', 'nbins': 'i8'})
 
-    dd_weights_set = merged_dd.map_partitions(func=grouped_apply_opt_part,
-                                              meta=meta_dict)
-    with ProgressBar():
-        best_weights = dd_weights_set.compute()
+    # dd_weights_set = merged_dd.map_partitions(func=grouped_apply_opt_part,
+    #                                           meta=meta_dict)
+    # start = time.time()
+    # with ProgressBar():
+    #     best_weights = dd_weights_set.compute()
+    # stop = time.time()
+    # print(stop - start)
 
     # best_weight: pd.DataFrame = dd_applyed.compute()
-    best_weights.to_pickle(
+    weights_applyed.to_pickle(
         "data/interim/best_weight_s{}_nb{}_ga{}_half{}.pickle".format(
             seed, nbins, gamma, half))
 
