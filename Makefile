@@ -3,7 +3,7 @@
 all: best_weight
 
 seed:= 10001
-nbins:= 2000
+nbins:= 1500
 gamma:= 7
 
 best_weight_fpath:= data/interim/best_weight_s$(seed)_nb$(nbins)_ga$(gamma).pickle
