@@ -156,7 +156,7 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
     elif method == 'DE':
         solver.SetRandomInitialPoints(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
         solver.Solve(helper_cost,
-                     termination=COG(1e-07, 15),
+                     termination=COG(1e-07, 60),
                      disp=False,
                      ScalingFactor=0.7)
 
