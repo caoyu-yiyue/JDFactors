@@ -128,8 +128,8 @@ def equation_str(mr):
     return equations
 
 
-def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
-             method):
+def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
+             max_r):
     # print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
@@ -146,7 +146,7 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
     elif method == 'DE':
         solver = DifferentialEvolutionSolver2(dim=FAC_NUM, NP=nbins)
     # solver.SetGenerationMonitor(stepmon)
-    solver.SetStrictRanges(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
+    solver.SetStrictRanges(min=[0] * FAC_NUM, max=[max_r] * FAC_NUM)
     solver.SetConstraints(constraint)
     solver.SetPenalty(penalty)
 
@@ -154,7 +154,7 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
         solver.SetMapper(Pool(2).map)
         solver.Solve(helper_cost, termination=COG(1e-07, 15), disp=False)
     elif method == 'DE':
-        solver.SetRandomInitialPoints(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
+        solver.SetRandomInitialPoints(min=[0] * FAC_NUM, max=[max_r] * FAC_NUM)
         solver.Solve(helper_cost,
                      termination=COG(1e-07, 60),
                      disp=False,
@@ -175,8 +175,9 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
 @click.option('--gamma', type=int, default=7)
 @click.option('--half', type=click.Choice(['first', 'second']))
 @click.option('--method', type=click.Choice(['Lattice', 'DE']))
+@click.option('--max_r', type=float)
 @click.argument('output_file', type=click.Path(writable=True, dir_okay=True))
-def main(seed, nbins, gamma, half, method, output_file):
+def main(seed, nbins, gamma, half, method, max_r, output_file):
     day_len = len(DATE_LIST)
     split_point = day_len // 2
     if half == 'first':
@@ -205,7 +206,8 @@ def main(seed, nbins, gamma, half, method, output_file):
         constraint=cf,
         penalty=pf,
         seed=seed,
-        method=method)
+        method=method,
+        max_r=max_r)
     weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
 
     # merged_dd: dd.DataFrame = dd.from_pandas(merged_df, npartitions=2)
