@@ -5,7 +5,8 @@ import numpy as np
 import pandas as pd
 import click
 from tqdm import tqdm
-from mystic.solvers import LatticeSolver, PowellDirectionalSolver
+from mystic.solvers import (LatticeSolver, PowellDirectionalSolver,
+                            DifferentialEvolutionSolver2)
 from mystic.symbolic import (generate_conditions, generate_constraint,
                              generate_penalty, generate_solvers, simplify)
 from mystic.termination import ChangeOverGeneration as COG
@@ -127,7 +128,8 @@ def equation_str(mr):
     return equations
 
 
-def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
+def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
+             method):
     # print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
@@ -138,14 +140,25 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
     def helper_cost(weight):
         return _expect_value(weight, rf=rf, gamma=7, fac_ndarr=fac_array)
 
-    solver = LatticeSolver(dim=FAC_NUM, nbins=nbins)
-    solver.SetNestedSolver(PowellDirectionalSolver)
-    solver.SetMapper(Pool(2).map)
+    if method == 'Lattice':
+        solver = LatticeSolver(dim=FAC_NUM, nbins=nbins)
+        solver.SetNestedSolver(PowellDirectionalSolver)
+    elif method == 'DE':
+        solver = DifferentialEvolutionSolver2(dim=FAC_NUM, NP=nbins)
     # solver.SetGenerationMonitor(stepmon)
     solver.SetStrictRanges(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
     solver.SetConstraints(constraint)
     solver.SetPenalty(penalty)
-    solver.Solve(helper_cost, termination=COG(1e-07, 15), disp=False)
+
+    if method == 'Lattice':
+        solver.SetMapper(Pool(2).map)
+        solver.Solve(helper_cost, termination=COG(1e-07, 15), disp=False)
+    elif method == 'DE':
+        solver.SetRandomInitialPoints(min=[0] * FAC_NUM, max=[1] * FAC_NUM)
+        solver.Solve(helper_cost,
+                     termination=COG(1e-07, 15),
+                     disp=False,
+                     ScalingFactor=0.7)
 
     weight = solver.Solution()
     func_v = _expect_value(weight, rf, gamma, fac_array)
@@ -161,7 +174,8 @@ def opti_latti_pow(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed):
 @click.option('--nbins', type=int)
 @click.option('--gamma', type=int, default=7)
 @click.option('--half', type=click.Choice(['first', 'second']))
-def main(seed, nbins, gamma, half):
+@click.option('--method', type=click.Choice(['Lattice', 'DE']))
+def main(seed, nbins, gamma, half, method):
     day_len = len(DATE_LIST)
     split_point = day_len // 2
     if half == 'first':
@@ -183,13 +197,14 @@ def main(seed, nbins, gamma, half):
 
     tqdm.pandas()
     weights_applyed: pd.DataFrame = merged_df.groupby('date').progress_apply(
-        opti_latti_pow,
+        opti_fun,
         # meta=meta_dict,
         nbins=nbins,
         gamma=gamma,
         constraint=cf,
         penalty=pf,
-        seed=seed)
+        seed=seed,
+        method=method)
     weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
 
     # merged_dd: dd.DataFrame = dd.from_pandas(merged_df, npartitions=2)
@@ -206,8 +221,8 @@ def main(seed, nbins, gamma, half):
 
     # best_weight: pd.DataFrame = dd_applyed.compute()
     weights_applyed.to_pickle(
-        "data/interim/best_weight_s{}_nb{}_ga{}_half{}.pickle".format(
-            seed, nbins, gamma, half))
+        "data/interim/best_weight_s{}_nb{}_ga{}_half{}_m{}.pickle".format(
+            seed, nbins, gamma, half, method))
 
 
 # %%
