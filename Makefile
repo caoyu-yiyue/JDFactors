@@ -16,4 +16,8 @@ $(best_weight_fpath_second): data/interim/eGARCH_random_num_all.feather | data/i
 	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --half second --method $(method) $@
 best_weight_first: $(best_weight_fpath_first)
 best_weight_second: $(best_weight_fpath_second)
-best_weight: best_weight_first best_weight_second
+
+# 执行如下命令会同时开两个python 进程，但是只会显示一个进度条
+best_weight: 
+	$(MAKE) best_weight_first &
+	$(MAKE) best_weight_second
