@@ -175,7 +175,8 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed,
 @click.option('--gamma', type=int, default=7)
 @click.option('--half', type=click.Choice(['first', 'second']))
 @click.option('--method', type=click.Choice(['Lattice', 'DE']))
-def main(seed, nbins, gamma, half, method):
+@click.argument('output_file', type=click.Path(writable=True, dir_okay=True))
+def main(seed, nbins, gamma, half, method, output_file):
     day_len = len(DATE_LIST)
     split_point = day_len // 2
     if half == 'first':
@@ -220,9 +221,7 @@ def main(seed, nbins, gamma, half, method):
     # print(stop - start)
 
     # best_weight: pd.DataFrame = dd_applyed.compute()
-    weights_applyed.to_pickle(
-        "data/interim/best_weight_s{}_nb{}_ga{}_half{}_m{}.pickle".format(
-            seed, nbins, gamma, half, method))
+    weights_applyed.to_pickle(output_file)
 
 
 # %%
