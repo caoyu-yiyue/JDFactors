@@ -8,13 +8,17 @@ gamma:= 7
 # half:= first
 method:= DE
 max_r:= 0.5
+sum_1:= T
+sum_1_flag= $(if $(filter T, $(sum_1)), --sum_1, --no_sum_1)
 
-best_weight_fpath_first:= data/processed/best_weight_s$(seed)_nb$(nbins)_ga$(gamma)_half1st_m$(method)_max$(max_r).pickle
-best_weight_fpath_second:= data/processed/best_weight_s$(seed)_nb$(nbins)_ga$(gamma)_half2nd_m$(method)_max$(max_r).pickle
+data_dir:= data/processed/ga$(gamma)_max$(max_r)_sum1$(sum_1)/
+best_weight_fpath_first:= $(data_dir)best_weight_s$(seed)_nb$(nbins)_m$(method)_half1st.pickle
+best_weight_fpath_second:= $(data_dir)best_weight_s$(seed)_nb$(nbins)_m$(method)_half2nd.pickle
+
 $(best_weight_fpath_first): data/interim/eGARCH_random_num_all.feather | data/interim/eGARCH_random_num_all.feather
-	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --half first --method $(method) --max_r $(max_r) $@
+	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --half first --method $(method) --max_r $(max_r) $(sum_1_flag) $@
 $(best_weight_fpath_second): data/interim/eGARCH_random_num_all.feather | data/interim/eGARCH_random_num_all.feather
-	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --half second --method $(method) --max_r $(max_r) $@
+	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --half second --method $(method) --max_r $(max_r) $(sum_1_flag) $@
 best_weight_first: $(best_weight_fpath_first)
 best_weight_second: $(best_weight_fpath_second)
 
