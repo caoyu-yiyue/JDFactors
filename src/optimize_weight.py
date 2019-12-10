@@ -119,11 +119,16 @@ def _expect_value(weight, rf, gamma, fac_ndarr):
     return -expected_value
 
 
-def equation_str(mr):
-    equations = """
-    x0 + x1 + x2 == 1
-    x0 + 2*(x1 + x2) - (1. / {}) <= 0
-    """.format(mr)
+def equation_str(mr, sum_1):
+    if sum_1:
+        equations = """
+        x0 + x1 + x2 == 1
+        x0 + 2*(x1 + x2) - (1. / {}) <= 0
+        """.format(mr)
+    else:
+        equations = """
+        x0 + 2*(x1 + x2) - (1. / {}) <= 0
+        """.format(mr)
 
     return equations
 
@@ -175,9 +180,10 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
 @click.option('--gamma', type=int, default=7)
 @click.option('--half', type=click.Choice(['first', 'second']))
 @click.option('--method', type=click.Choice(['Lattice', 'DE']))
-@click.option('--max_r', type=float)
+@click.option('--max_r', default=None)
+@click.option('--sum_1/--no_sum_1', default=True)
 @click.argument('output_file', type=click.Path(writable=True, dir_okay=True))
-def main(seed, nbins, gamma, half, method, max_r, output_file):
+def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
     day_len = len(DATE_LIST)
     split_point = day_len // 2
     if half == 'first':
@@ -193,7 +199,11 @@ def main(seed, nbins, gamma, half, method, max_r, output_file):
     rf_df = read_rf_df()
     merged_df = join_rf_df(random_num_df=use_df, rf_df=rf_df, rf_type='week')
 
-    equation = equation_str(mr=0.2)
+    if sum_1:
+        equation = equation_str(mr=0.2, sum_1=True)
+    else:
+        equation = equation_str(mr=0.2, sum_1=False)
+
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
 
