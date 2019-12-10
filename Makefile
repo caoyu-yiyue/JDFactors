@@ -26,3 +26,9 @@ best_weight_second: $(best_weight_fpath_second)
 best_weight: 
 	$(MAKE) best_weight_first &
 	$(MAKE) best_weight_second
+
+
+
+############################## 合并数据框 ###############################
+concat_halfs:
+	python3 /Users/caoyue/Codes/Python/JDFactors/src/process/combine_halfs.py
