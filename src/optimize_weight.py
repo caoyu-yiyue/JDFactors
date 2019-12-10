@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import click
 from tqdm import tqdm
+import os
 from mystic.solvers import (LatticeSolver, PowellDirectionalSolver,
                             DifferentialEvolutionSolver2)
 from mystic.symbolic import (generate_conditions, generate_constraint,
@@ -238,6 +239,11 @@ def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
     # print(stop - start)
 
     # best_weight: pd.DataFrame = dd_applyed.compute()
+
+    # 如果保存文件的路径不存在，则创建一个
+    save_dir = os.path.split(output_file)[0]
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
     weights_applyed.to_pickle(output_file)
 
 
