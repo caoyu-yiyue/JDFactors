@@ -180,7 +180,7 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
 @click.option('--gamma', type=int, default=7)
 @click.option('--half', type=click.Choice(['first', 'second']))
 @click.option('--method', type=click.Choice(['Lattice', 'DE']))
-@click.option('--max_r', default=None)
+@click.option('--max_r', type=str, default='None')
 @click.option('--sum_1/--no_sum_1', default=True)
 @click.argument('output_file', type=click.Path(writable=True, dir_okay=True))
 def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
@@ -203,6 +203,11 @@ def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
         equation = equation_str(mr=0.2, sum_1=True)
     else:
         equation = equation_str(mr=0.2, sum_1=False)
+
+    if max_r == 'None':
+        max_r = None
+    else:
+        max_r = float(max_r)
 
     pf = generate_penalty(generate_conditions(equation), k=1e20)
     cf = generate_constraint(generate_solvers(simplify(equation)))
