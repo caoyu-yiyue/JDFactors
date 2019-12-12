@@ -208,10 +208,7 @@ def main(gamma, max_r, sum_1, seed, nbins, method, half, output_file):
     rf_df = read_rf_df()
     merged_df = join_rf_df(random_num_df=use_df, rf_df=rf_df, rf_type='week')
 
-    if sum_1:
-        equation = equation_str(mr=0.2, sum_1=True)
-    else:
-        equation = equation_str(mr=0.2, sum_1=False)
+    equation = equation_str(mr=0.2, sum_1=sum_1)
 
     if max_r == 'None':
         max_r = None
