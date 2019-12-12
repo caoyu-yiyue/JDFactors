@@ -79,9 +79,9 @@ def join_rf_df(random_num_df: pd.DataFrame, rf_df: pd.DataFrame, rf_type: str):
     pd.DataFrame
         合并了一列无风险收益的数据框
     """
-    # 将第二天的rf 提前一天，因为前一天需要使用后一天的rf 计算。
-    shifted_rf: pd.Series = rf_df[rf_type].shift(-1)
-    joined_df: pd.DataFrame = random_num_df.join(shifted_rf, how='inner')
+    # r_{f,t+1} 与r_{t+1} 是同一时间刻度上，所以只需要简单对齐合并即可
+    rf_series: pd.Series = rf_df[rf_type]
+    joined_df: pd.DataFrame = random_num_df.join(rf_series, how='inner')
     renamed_rf_col_df: pd.DataFrame = joined_df.rename(columns={rf_type: 'rf'})
     return renamed_rf_col_df
 
@@ -225,6 +225,8 @@ def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
         method=method,
         max_r=max_r)
     weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
+    # 使用r_{f, t+1} 和r_{t+1} 计算的是前一个时刻的权重w_{t}，所以结果需要向前提一个时刻
+    weights_adj_date = weights_applyed.shift(-1).dropna()
 
     # merged_dd: dd.DataFrame = dd.from_pandas(merged_df, npartitions=2)
     # meta_dict = {fac_name: float for fac_name in FAC_NAME + ['func_v']}
@@ -244,7 +246,7 @@ def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
     save_dir = os.path.split(output_file)[0]
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    weights_applyed.to_pickle(output_file)
+    weights_adj_date.to_pickle(output_file)
 
 
 # %%
