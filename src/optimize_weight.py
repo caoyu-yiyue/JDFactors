@@ -177,8 +177,8 @@ def opti_fun(
     weight = solver.Solution()
     func_v = solver.bestEnergy
 
-    values = np.append(arr=weight, values=[func_v, seed, nbins])
-    idx = FAC_NAME + ['func_v', 'seed', 'nbins']
+    values = np.append(arr=weight, values=[func_v, seed, nbins, method])
+    idx = FAC_NAME + ['func_v', 'seed', 'nbins', 'method']
     result = pd.Series(data=values, index=idx)
     return result
 
