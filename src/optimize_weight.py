@@ -185,6 +185,7 @@ def opti_fun(
 
 @click.command()
 @click.option('--gamma', type=int, default=7)
+@click.option('--mr', type=float)
 @click.option('--max_r', type=str, default='None')
 @click.option('--sum_1/--no_sum_1', default=True)
 @click.option('--seed', type=int)
@@ -192,7 +193,7 @@ def opti_fun(
 @click.option('--method', type=click.Choice(['Lattice', 'DE']))
 @click.option('--half', type=click.Choice(['first', 'second']))
 @click.argument('output_file', type=click.Path(writable=True, dir_okay=True))
-def main(gamma, max_r, sum_1, seed, nbins, method, half, output_file):
+def main(gamma, mr, max_r, sum_1, seed, nbins, method, half, output_file):
     day_len = len(DATE_LIST)
     split_point = day_len // 2
     if half == 'first':
@@ -208,7 +209,7 @@ def main(gamma, max_r, sum_1, seed, nbins, method, half, output_file):
     rf_df = read_rf_df()
     merged_df = join_rf_df(random_num_df=use_df, rf_df=rf_df, rf_type='week')
 
-    equation = equation_str(mr=0.2, sum_1=sum_1)
+    equation = equation_str(mr=mr, sum_1=sum_1)
 
     if max_r == 'None':
         max_r = None
