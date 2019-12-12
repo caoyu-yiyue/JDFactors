@@ -134,8 +134,16 @@ def equation_str(mr, sum_1):
     return equations
 
 
-def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
-             max_r):
+def opti_fun(
+        df: pd.DataFrame,
+        gamma: int,
+        max_r: float,
+        seed: int,
+        nbins: int,
+        method: str,
+        constraint,
+        penalty,
+):
     # print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
@@ -176,15 +184,15 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
 
 
 @click.command()
-@click.option('--seed', type=int)
-@click.option('--nbins', type=int)
 @click.option('--gamma', type=int, default=7)
-@click.option('--half', type=click.Choice(['first', 'second']))
-@click.option('--method', type=click.Choice(['Lattice', 'DE']))
 @click.option('--max_r', type=str, default='None')
 @click.option('--sum_1/--no_sum_1', default=True)
+@click.option('--seed', type=int)
+@click.option('--nbins', type=int)
+@click.option('--method', type=click.Choice(['Lattice', 'DE']))
+@click.option('--half', type=click.Choice(['first', 'second']))
 @click.argument('output_file', type=click.Path(writable=True, dir_okay=True))
-def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
+def main(gamma, max_r, sum_1, seed, nbins, method, half, output_file):
     day_len = len(DATE_LIST)
     split_point = day_len // 2
     if half == 'first':
@@ -217,13 +225,13 @@ def main(seed, nbins, gamma, half, method, max_r, sum_1, output_file):
     weights_applyed: pd.DataFrame = merged_df.groupby('date').progress_apply(
         opti_fun,
         # meta=meta_dict,
-        nbins=nbins,
         gamma=gamma,
-        constraint=cf,
-        penalty=pf,
+        max_r=max_r,
         seed=seed,
+        nbins=nbins,
         method=method,
-        max_r=max_r)
+        constraint=cf,
+        penalty=pf)
     weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
     # 使用r_{f, t+1} 和r_{t+1} 计算的是前一个时刻的权重w_{t}，所以结果需要向前提一个时刻
     weights_adj_date = weights_applyed.shift(-1).dropna()
