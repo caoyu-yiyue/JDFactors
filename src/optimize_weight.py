@@ -149,18 +149,18 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
     if method == 'Lattice':
         solver = LatticeSolver(dim=FAC_NUM, nbins=nbins)
         solver.SetNestedSolver(PowellDirectionalSolver)
+        solver.SetMapper(Pool(2).map)
     elif method == 'DE':
         solver = DifferentialEvolutionSolver2(dim=FAC_NUM, NP=nbins)
+        solver.SetRandomInitialPoints(min=[0] * FAC_NUM, max=[max_r] * FAC_NUM)
     # solver.SetGenerationMonitor(stepmon)
     solver.SetStrictRanges(min=[0] * FAC_NUM, max=[max_r] * FAC_NUM)
     solver.SetConstraints(constraint)
     solver.SetPenalty(penalty)
 
     if method == 'Lattice':
-        solver.SetMapper(Pool(2).map)
         solver.Solve(helper_cost, termination=COG(1e-07, 15), disp=False)
     elif method == 'DE':
-        solver.SetRandomInitialPoints(min=[0] * FAC_NUM, max=[max_r] * FAC_NUM)
         solver.Solve(helper_cost,
                      termination=COG(1e-07, 60),
                      disp=False,
