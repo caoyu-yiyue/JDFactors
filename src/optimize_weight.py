@@ -167,7 +167,7 @@ def opti_fun(df: pd.DataFrame, nbins, gamma, constraint, penalty, seed, method,
                      ScalingFactor=0.7)
 
     weight = solver.Solution()
-    func_v = _expect_value(weight, rf, gamma, fac_array)
+    func_v = solver.bestEnergy
 
     values = np.append(arr=weight, values=[func_v, seed, nbins])
     idx = FAC_NAME + ['func_v', 'seed', 'nbins']
