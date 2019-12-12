@@ -80,8 +80,8 @@ def join_rf_df(random_num_df: pd.DataFrame, rf_df: pd.DataFrame, rf_type: str):
         合并了一列无风险收益的数据框
     """
     # r_{f,t+1} 与r_{t+1} 是同一时间刻度上，所以只需要简单对齐合并即可
-    rf_series: pd.Series = rf_df[rf_type]
-    joined_df: pd.DataFrame = random_num_df.join(rf_series, how='inner')
+    shifted_rf: pd.Series = rf_df[rf_type]
+    joined_df: pd.DataFrame = random_num_df.join(shifted_rf, how='inner')
     renamed_rf_col_df: pd.DataFrame = joined_df.rename(columns={rf_type: 'rf'})
     return renamed_rf_col_df
 
