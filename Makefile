@@ -33,6 +33,6 @@ best_weight:
 ############################## 合并数据框 ###############################
 concat_halfs:
 	python3 /Users/caoyue/Codes/Python/JDFactors/src/process/combine_halfs.py
-combine_by_mins: concat_halfs
+combine_by_mins:
 	python3 /Users/caoyue/Codes/Python/JDFactors/src/process/combine_mins.py
 	
