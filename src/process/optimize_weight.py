@@ -134,16 +134,8 @@ def equation_str(mr, sum_1):
     return equations
 
 
-def opti_fun(
-        df: pd.DataFrame,
-        gamma: int,
-        max_r: float,
-        seed: int,
-        nbins: int,
-        method: str,
-        constraint,
-        penalty,
-):
+def opti_fun(df: pd.DataFrame, gamma: int, max_r: float, seed: int, nbins: int,
+             method: str, constraint, penalty, FAC_NAME, FAC_NUM):
     # print(df.name)
     core_fac = df.drop(columns='rf')
     fac_array = core_fac.to_numpy()
@@ -229,7 +221,9 @@ def main(gamma, mr, max_r, sum_1, seed, nbins, method, half, output_file):
         nbins=nbins,
         method=method,
         constraint=cf,
-        penalty=pf)
+        penalty=pf,
+        FAC_NAME=FAC_NAME,
+        FAC_NUM=FAC_NUM)
     weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
     # 使用r_{f, t+1} 和r_{t+1} 计算的是前一个时刻的权重w_{t}，所以结果需要向前提一个时刻
     # weights_adj_date = weights_applyed.shift(-1).dropna()
