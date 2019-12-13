@@ -6,7 +6,7 @@ from functools import reduce
 # %%
 weights_root_dir = 'data/processed/'
 # 根目录下的子目录列表
-weight_sub_dirs = glob(weights_root_dir + '*/')
+weight_sub_dirs = glob(weights_root_dir + 'ga*/')
 
 
 def compare_combine(df_left, df_right):
@@ -28,5 +28,6 @@ for sub_dir in weight_sub_dirs:
     # 找到其中的all 结尾的文件
     files_in_sub = glob(sub_dir + '*all.pickle')
     dfs_in_sub = map(pd.read_pickle, files_in_sub)
+    # print(list(dfs_in_sub)[0])
     combined_df: pd.DataFrame = reduce(compare_combine, dfs_in_sub)
     combined_df.to_pickle(sub_dir + 'combined_result.pickle')
