@@ -17,9 +17,9 @@ best_weight_fpath_first:= $(data_dir)best_weight_s$(seed)_nb$(nbins)_m$(method)_
 best_weight_fpath_second:= $(data_dir)best_weight_s$(seed)_nb$(nbins)_m$(method)_half2nd.pickle
 
 $(best_weight_fpath_first): data/interim/eGARCH_random_num_all.feather | data/interim/eGARCH_random_num_all.feather
-	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --mr $(mr) --half first --method $(method) --max_r $(max_r) $(sum_1_flag) $@
+	python3 -O src/process/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --mr $(mr) --half first --method $(method) --max_r $(max_r) $(sum_1_flag) $@
 $(best_weight_fpath_second): data/interim/eGARCH_random_num_all.feather | data/interim/eGARCH_random_num_all.feather
-	python3 -O src/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --mr $(mr) --half second --method $(method) --max_r $(max_r) $(sum_1_flag) $@
+	python3 -O src/process/optimize_weight.py --seed $(seed) --nbins $(nbins) --gamma $(gamma) --mr $(mr) --half second --method $(method) --max_r $(max_r) $(sum_1_flag) $@
 best_weight_first: $(best_weight_fpath_first)
 best_weight_second: $(best_weight_fpath_second)
 
