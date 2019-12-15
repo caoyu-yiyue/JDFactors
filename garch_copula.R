@@ -80,8 +80,9 @@ tcop_stMargin_dist <- mvdc(
   )
 )
 # 生成和week_fac 行数一样多的随机数
-cop_rand_nums <- rMvdc(nrow(week_fac), tcop_stMargin_dist)
-colnames(cop_rand_nums) <- colnames(week_fac)
+set.seed(10001)
+tcop_stMargin_rand_nums <- rMvdc(nrow(week_fac), tcop_stMargin_dist)
+colnames(tcop_stMargin_rand_nums) <- colnames(week_fac)
 
 ############################## 保存结果 #####################################
 # resids_xts 转化为df 并保存为feather
@@ -89,4 +90,4 @@ resids_df <- data.frame(date = index(resids_xts), coredata(resids_xts))
 write_feather(resids_df, path = "data/interim/garch_residuals.feather")
 
 # 保存通过garch 和copula 模型生成的随机数
-write_feather(as.data.frame(cop_rand_nums), path = "data/interim/garch_cop_randoms.feather")
+write_feather(as.data.frame(cop_rand_nums), path = "data/interim/garch_tcop_stMargin_randoms.feather")
