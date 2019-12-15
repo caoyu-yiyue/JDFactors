@@ -65,15 +65,15 @@ margin_params <- lapply(dp_density_params, FUN = function(param_xts) {
 # 估计copula 参数
 pob_vars <- pobs(as.matrix(week_fac))
 d <- ncol(week_fac)
-cop_mdl <- tCopula(dim = d)
-cop_fit <- fitCopula(cop_mdl, pob_var, method = "ml")
+cop_mdl <- tCopula(dim = d, dispstr = "un")
+cop_fit <- fitCopula(cop_mdl, pob_vars, method = "ml")
 
-rho <- coef(cop_fit)[1]
-df <- coef(cop_fit)[2]
+rho <- coef(cop_fit)[1:3]
+df <- coef(cop_fit)[4]
 
 # 估计出联合分布
 tcop_stMargin_dist <- mvdc(
-  copula = tCopula(rho, dim = d, df = df), margins = c("st", "st", "st"),
+  copula = tCopula(rho, dim = d, df = df, dispstr = "un"), margins = c("st", "st", "st"),
   paramMargins = list(
     list(dp = margin_params[["premium"]]), list(dp = margin_params[["smb"]]),
     list(dp = margin_params[["hml"]])
@@ -84,10 +84,29 @@ set.seed(10001)
 tcop_stMargin_rand_nums <- rMvdc(nrow(week_fac), tcop_stMargin_dist)
 colnames(tcop_stMargin_rand_nums) <- colnames(week_fac)
 
+
+################################ norm copula ################################
+norm_cop <- normalCopula(dim = d, dispstr = "un")
+norm_cop_fit <- fitCopula(norm_cop, pob_vars, method = "ml")
+
+norm_rhos <- coef(norm_cop_fit)
+norm_cop_stMargin_dist <- mvdc(
+  copula = tCopula(norm_rhos, dim = d, dispstr = "un"), margins = c("st", "st", "st"),
+  paramMargins = list(
+    list(dp = margin_params[["premium"]]), list(dp = margin_params[["smb"]]),
+    list(dp = margin_params[["hml"]])
+  )
+)
+
+set.seed(10001)
+normcop_stMargin_rand_nums <- rMvdc(10000, norm_cop_stMargin_dist)
+colnames(normcop_stMargin_rand_nums) <- colnames(week_fac)
+
 ############################## 保存结果 #####################################
 # resids_xts 转化为df 并保存为feather
 resids_df <- data.frame(date = index(resids_xts), coredata(resids_xts))
 write_feather(resids_df, path = "data/interim/garch_residuals.feather")
 
 # 保存通过garch 和copula 模型生成的随机数
-write_feather(as.data.frame(cop_rand_nums), path = "data/interim/garch_tcop_stMargin_randoms.feather")
+write_feather(as.data.frame(tcop_stMargin_rand_nums), path = "data/interim/garch_tcop_stMargin_randoms.feather")
+write_feather(as.data.frame(normcop_stMargin_rand_nums), path = "data/interim/garch_normcop_stMargin_randoms.feather")
