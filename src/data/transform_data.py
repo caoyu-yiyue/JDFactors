@@ -11,9 +11,15 @@ def read_garch_stand_residual():
     return garch_resids
 
 
-def read_garch_cop_randoms():
+def read_garch_cop_randoms(cop_type: str):
     """
     读取由r 语言生成的garch + copula 模型生成的随机数
     """
-    rands = pd.read_feather('data/interim/garch_tcop_stMargin_randoms.feather')
+    if cop_type == 't':
+        rands = pd.read_feather(
+            'data/interim/garch_tcop_stMargin_randoms.feather')
+    elif cop_type == 'norm':
+        rands = pd.read_feather(
+            'data/interim/garch_normcop_stMargin_randoms.feather')
+
     return rands
