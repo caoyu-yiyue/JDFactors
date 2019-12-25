@@ -169,8 +169,8 @@ def opti_fun(df: pd.DataFrame, gamma: int, max_r: float, seed: int, nbins: int,
     weight = solver.Solution()
     func_v = solver.bestEnergy
 
-    values = np.append(arr=weight, values=[func_v, seed, nbins, method])
-    idx = FAC_NAME + ['func_v', 'seed', 'nbins', 'method']
+    values = np.append(arr=weight, values=[func_v])
+    idx = FAC_NAME + ['func_v']
     result = pd.Series(data=values, index=idx)
     return result
 
@@ -224,7 +224,21 @@ def main(gamma, mr, max_r, sum_1, seed, nbins, method, half, output_file):
         penalty=pf,
         FAC_NAME=FAC_NAME,
         FAC_NUM=FAC_NUM)
-    weights_applyed = weights_applyed.astype({'seed': 'i8', 'nbins': 'i8'})
+    # 为每一行追加seed、nbins、method 信息。先开一个meta_df，然后与所需数据合并
+    meta_df: pd.DataFrame = pd.DataFrame(data={
+        'seed': seed,
+        'nbins': nbins,
+        'method': method
+    },
+                                         index=weights_applyed.index)
+    weights_with_meta: pd.DataFrame = pd.concat([weights_applyed, meta_df],
+                                                axis=1)
+
+    # 将seed 和nbins 转化成int8 类型
+    weights_with_meta = weights_with_meta.astype({
+        'seed': 'int8',
+        'nbins': 'int8'
+    })
     # 使用r_{f, t+1} 和r_{t+1} 计算的是前一个时刻的权重w_{t}，所以结果需要向前提一个时刻
     # weights_adj_date = weights_applyed.shift(-1).dropna()
 
@@ -246,7 +260,7 @@ def main(gamma, mr, max_r, sum_1, seed, nbins, method, half, output_file):
     save_dir = os.path.split(output_file)[0]
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
-    weights_applyed.to_pickle(output_file)
+    weights_with_meta.to_pickle(output_file)
 
 
 # %%
