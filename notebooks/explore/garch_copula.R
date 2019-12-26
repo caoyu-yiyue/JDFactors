@@ -16,9 +16,14 @@ var_mdl <- list(model = garch_type, garchOrder = c(1, 1))
 mean_mdl <- list(armaOrder = c(3, 0))
 archSpec <- ugarchspec(variance.model = var_mdl, mean.model = mean_mdl, distribution.model = "sstd")
 
-# 获取到每个因子的standardize residuals
-resids_list <- lapply(week_fac, FUN = function(col) {
+# 为每个因子进行garch 拟合
+garch_fit_list <- lapply(week_fac, FUN = function(col) {
   fit <- ugarchfit(archSpec, data = col)
+  return(fit)
+})
+
+# 获取到每个因子的standardize residuals
+resids_list <- lapply(garch_fit_list, FUN = function(fit) {
   return(residuals(fit, standardize = TRUE))
 })
 
@@ -31,6 +36,14 @@ for (fac in fac_names) {
 resids_xts <- Reduce(f = function(left_xts, right_xts) {
   merge.xts(left_xts, right_xts)
 }, x = resids_list)
+
+# 生成每个因子的standrize redisual 的qq-plot
+for (fac in fac_names) {
+  file_path = paste("notebooks/report/pics/", fac, "_resid_qq-plot.pdf", sep = "")
+  pdf(file = file_path)
+  plot(garch_fit_list[[fac]], which=9)
+  dev.off()
+}
 
 ######################## copula 模型拟合出随机数 ##########################
 # 估计分布
