@@ -53,7 +53,7 @@ arch_roll_dist_df <- lapply(arch_roll_dist_df, function(x) {
 cls <- makeCluster(4, type = "FORK")
 doParallel::registerDoParallel(cls, cores = 2)
 # 这里因为最后一年只使用前一年的模型，所以不必对它进行循环计算
-cop_params <- foreach(i = year_end_idx[4:(length(year_end_idx) - 1)], .combine = "rbind") %dopar% {
+cop_params <- foreach(i = year_end_idx[4]:(nrow(week_fac) - 1), .combine = "rbind") %dopar% {
   d_dim <- ncol(week_fac)
   d_window <- week_fac[1:i]
   
@@ -128,7 +128,7 @@ margin_params_xts <- merge_margin_dist_params(margin_params_list = roll_dist_dp)
 ####### merge magin parameters and copula parameters ###########
 merged_params <- merge(margin_params_xts, cop_params, join = "outer")
 # 每一年使用初年估计的copula 参数，所以使用其向前填充
-merged_params <- na.locf(merged_params)
+# merged_params <- na.locf(merged_params)
 merged_params_path <- paste("data/interim/", garch_type, "_merged_params.Rda", sep = "")
 save(merged_params, file = merged_params_path)
 load(merged_params_path)
@@ -215,12 +215,13 @@ seeds = c(101, 304, 10001, 100001, 1000001)
 result_rands <- data.frame(matrix(nrow = 0, ncol = length(FAC_NAMES)))
 colnames(result_rands) <- FAC_NAMES
 
-inte_num <- 9 # 总共需要计算多少
+inte_num <- 19 # 总共需要计算多少
 now = 0 # 目前已经计算了多少
 # 从某个seed 出发，加上一个总数，在inte_num 的范围内生出新seed 做循环
-for(s in (seeds[3] + now):(seeds[3] + inte_num)) {
+for(counter in now:inte_num) {
   # 打印当前的循环个数，以及完成的百分比
-  counter <- s - seeds[3]
+  # counter <- s - seeds[3]
+  s <- seeds[3] + counter * 1500
   print(sprintf("NO. %d, %.2f%%", counter + 1, (counter * 100) / inte_num))
  
   # 开一个cluster，然后并行在mvdc_list 上循环生成随机数1000 个。
