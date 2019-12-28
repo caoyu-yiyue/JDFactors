@@ -56,8 +56,28 @@ doParallel::registerDoParallel(cls, cores = 2)
 cop_params <- foreach(i = year_end_idx[4:(length(year_end_idx) - 1)], .combine = "rbind") %dopar% {
   d_dim <- ncol(week_fac)
   d_window <- week_fac[1:i]
+  
+  ############## 对该段窗口进行 garchfit 并得到 standarize residuals ##################
+  garch_fit_list <- lapply(d_window, FUN = function(col) {
+    fit <- ugarchfit(archSpec, data = col, solver = "hybrid")
+    return(fit)
+  })
+  # 获取到每个因子的standardize residuals
+  resids_list <- lapply(garch_fit_list, FUN = function(fit) {
+    return(residuals(fit, standardize = TRUE))
+  })
+  # 每个fac 加名字
+  fac_names <- names(resids_list)
+  for (fac in fac_names) {
+    colnames(resids_list[[fac]]) <- fac
+  }
+  # 合并每个因子的residual 成为xts 对象
+  resids_xts <- Reduce(f = function(left_xts, right_xts) {
+    merge.xts(left_xts, right_xts)
+  }, x = resids_list)
 
-  pob_var <- pobs(as.matrix(d_window))
+  ###################### 估计 copula 系数 ###############################3
+  pob_var <- pobs(as.matrix(resids_xts))
   cop_mdl <- tCopula(dim = d_dim, dispstr = "un")
   cop_fit <- fitCopula(cop_mdl, pob_var, method = "ml")
 
