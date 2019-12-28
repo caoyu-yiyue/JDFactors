@@ -76,7 +76,7 @@ margin_params <- lapply(dp_density_params, FUN = function(param_xts) {
 })
 
 # 估计copula 参数
-pob_vars <- pobs(as.matrix(week_fac))
+pob_vars <- pobs(as.matrix(resids_xts))
 d <- ncol(week_fac)
 cop_mdl <- tCopula(dim = d, dispstr = "un")
 cop_fit <- fitCopula(cop_mdl, pob_vars, method = "ml")
