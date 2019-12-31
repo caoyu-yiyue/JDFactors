@@ -38,14 +38,21 @@ def read_rf_df(file='data/raw/csvFiles/TRD_Nrrate.csv'):
     return rf_df
 
 
-def describe_df(fac_df: pd.DataFrame):
+def describe_df(df_for_describe: pd.DataFrame):
     """
-    传入一个因子数据框，在描述性统计的基础上加一个偏度和峰度
+    传入一个 DataFrame 或 Series，在描述性统计的基础上加一个偏度和峰度
     Return:
     ------
     pd.DataFrame
     """
-    des_df: pd.DataFrame = fac_df.describe()
-    des_df = des_df.append(fac_df.skew().rename('skew'))
-    des_df = des_df.append(fac_df.kurtosis().rename('kurtosis'))
+    des_df = df_for_describe.describe()
+    skew_v = df_for_describe.skew()
+    kurt_v = df_for_describe.kurtosis()
+    if isinstance(des_df, pd.DataFrame):
+        des_df = des_df.append(skew_v.rename('skew'))
+        des_df = des_df.append(kurt_v.rename('kurtosis'))
+    elif isinstance(des_df, pd.Series):
+        skew_kurt: pd.Series = pd.Series(data=[skew_v, kurt_v],
+                                         index=['skew', 'kurt'])
+        des_df = des_df.append(skew_kurt)
     return des_df
