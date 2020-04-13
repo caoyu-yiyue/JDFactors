@@ -56,8 +56,30 @@ fac_df_to_xts <- function(fac_df) {
 }
 
 
+prepare_data_main <- function() {
+  # 进行数据预备的主函数，把Week, Day, Month 的原始csv 数据都保存为xts 对象。
+  # 保存路径名为data/interim/fac_xts_<freq>_.Rda
+
+  for (freq in c("Week", "Month", "Day")) {
+    raw_data <- read_raw(data_freq = freq)
+
+    if (freq == "Week") {
+      raw_data <- parse_year_week(raw_data)
+    } else if (freq == "Month") {
+      # Month 数据将TradingMonth 列转为yearmon 类型
+      raw_data[["TradingMonth"]] <- zoo::as.yearmon(raw_data[["TradingMonth"]])
+    } else if (freq == "Day") {
+      # Day 数据将TradingDate 列转为Date 类型
+      raw_data[["TradingDate"]] <- as.Date(raw_data[["TradingDate"]])
+    }
+
+    # 转换为xts 对象并保存数据
+    xts_obj <- fac_df_to_xts(raw_data)
+    save(xts_obj, file = paste0("data/interim/fac_xts_", freq, ".Rda"))
+  }
+}
+
+
 if (!interactive()) {
-  week_raw <- read_raw(data_freq = "Week")
-  week_to_date <- parse_year_week(week_raw)
-  xts_obj <- fac_df_to_xts(week_to_date)
+  prepare_data_main()
 }
