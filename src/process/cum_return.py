@@ -2,12 +2,6 @@
 import pandas as pd
 
 
-def read_facs(fpath='data/raw/csvFiles/week_readed.csv'):
-    facs_ret = pd.read_csv(fpath, index_col='trdWeek', parse_dates=['trdWeek'])
-    facs_ret.rename_axis(index={'trdWeek': 'date'}, inplace=True)
-    return facs_ret
-
-
 def ex_ret_by_weight(gamma: int, mr: float, max_r: float, sum1: bool,
                      fac_returns: pd.DataFrame):
     """
@@ -43,7 +37,7 @@ def ex_ret_by_weight(gamma: int, mr: float, max_r: float, sum1: bool,
 
     fac_names = fac_returns.columns.to_list()
     facs_ret_aligned = fac_returns.reindex(weights_df.index)
-    weights_df_aligned: pd.DataFrame = weights_df[fac_names]
+    weights_df_aligned: pd.DataFrame = weights_df[fac_names].astype(float)
 
     ex_ret_series: pd.Series = weights_df_aligned.mul(
         facs_ret_aligned, axis='index').sum(axis='columns')
@@ -71,3 +65,32 @@ def cum_ret(ret_series, rf_series=None):
         ret_series = ret_series + rf_series
     cum_ret = (ret_series + 1).cumprod() - 1
     return cum_ret
+
+
+def annualized_ret(ret_series: pd.Series, feq: str = 'week'):
+    """
+    计算年化收益率的函数
+
+    Paramters:
+    ----------
+    ret_series: pd.Series
+        收益率序列
+
+    feq: str, one of ('week', 'day', 'month')
+        原收益率序列的频率
+
+    Return:
+    -------
+        float
+        年化累积收益率
+    """
+    if feq == 'week':
+        one_year_len = 52
+    elif feq == 'day':
+        one_year_len = 365
+    elif feq == 'month':
+        one_year_len = 12
+
+    held_len = len(ret_series)
+    annua_ret = ret_series.add(1).prod()**(one_year_len / held_len) - 1
+    return annua_ret
