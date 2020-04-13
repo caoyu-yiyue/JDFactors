@@ -3,6 +3,7 @@
 # ==================================================================================
 library(xts)
 library(ISOweek)
+library(xts)
 
 read_raw <- function(data_freq) {
   # 读取从数据库下载到的原数据。
@@ -38,7 +39,23 @@ parse_year_week <- function(df_with_week, week_col_name = "TradingWeek") {
 }
 
 
+fac_df_to_xts <- function(fac_df) {
+  # 将因子的data.frame 对象转换为xts 对象
+  # Arguments:
+  #   fac_df: 保存有因子（第一列为时间列，类型为Date）的data.frame
+  # Values:
+  #   xts 对象，保存有原数据的xts 对象。
+
+  # 首先将列名中的1 和Trading 去掉
+  colnames(fac_df) <- gsub("1|Trading", "", colnames(fac_df))
+  # 转换xts 对象并返回
+  xts_obj <- as.xts(fac_df[, -1], order.by = fac_df[, 1])
+  return(xts_obj)
+}
+
+
 if (!interactive()) {
   week_raw <- read_raw(data_freq = "Week")
   week_to_date <- parse_year_week(week_raw)
+  xts_obj <- fac_df_to_xts(week_to_date)
 }
