@@ -1,6 +1,6 @@
-# ==================================================================================
+# ==============================================================================
 # 从数据库中下载的原始数据开始，读取原始数据、形成所需的数据格式等准备工作
-# ==================================================================================
+# ==============================================================================
 library(xts)
 library(ISOweek)
 library(xts)
@@ -31,7 +31,10 @@ parse_year_week <- function(df_with_week, week_col_name = "TradingWeek") {
 
   week_col <- df_with_week[[week_col_name]]
   # 将week 列按照IOSweek2date 所需的形式，转换为"%Y-W%V-%u", 这里直接设置为星期五
-  add_weekday <- paste0(substr(week_col, 1, 5), "W", substr(week_col, 6, 7), "-5")
+  add_weekday <- paste0(
+    substr(week_col, 1, 5), "W",
+    substr(week_col, 6, 7), "-5"
+  )
   date_col <- ISOweek2date(add_weekday)
 
   df_with_week[[week_col_name]] <- date_col
