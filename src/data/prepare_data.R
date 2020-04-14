@@ -60,7 +60,7 @@ read_fac_xts <- function(data_freq = "Week") {
   #' @title 读取data preparing 之后的xts 对象
 
   #' @param data_freq Default "Week" 指定哪个频率的数据，c("Week", "Month", "Day") 的其中之一
-  #‘ @return 一个xts 对象，为保存过的因子xts 数据
+  #' @return 一个xts 对象，为保存过的因子xts 数据
   data_path <- paste0("data/interim/fac_xts_", data_freq, ".Rds")
   xts_obj <- readRDS(data_path)
   return(xts_obj)
