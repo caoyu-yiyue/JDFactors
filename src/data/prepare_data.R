@@ -75,7 +75,7 @@ prepare_data_main <- function() {
 
     # 转换为xts 对象并保存数据
     xts_obj <- fac_df_to_xts(raw_data)
-    save(xts_obj, file = paste0("data/interim/fac_xts_", freq, ".Rda"))
+    saveRDS(xts_obj, file = paste0("data/interim/fac_xts_", freq, ".Rds"))
   }
 }
 
