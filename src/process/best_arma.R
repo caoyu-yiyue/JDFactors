@@ -1,5 +1,10 @@
-library(rugarch)
-library(future.apply)
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages({
+  library(rugarch)
+  library(future.apply)
+  library(optparse)
+})
 source("src/data/prepare_data.R")
 
 
@@ -52,10 +57,47 @@ single_fac_best_arma_order <- function(data_vector, arma_order_pairs_df,
 }
 
 
-best_arma_mian <- function() {
+best_arma_mian <- function(fac_data_freq, save_path) {
+  #' @title 计算所有因子最佳arma order 的主函数
+  #' @param fac_data_freq 哪个频率的因子数据 c("Week", "Day", "Month")
+  #' @param save_path 保存最佳arma order 数据的文件地址（完整文件名）
+  #' @return NULL
   plan(multiprocess, workers = 4)
-  fac_xts <- read_fac_xts()
+  fac_xts <- read_fac_xts(data_freq = fac_data_freq)
   arma_orders <- expand.grid(ar = 0:10, ma = 0:10)
-  best_arma_orders <- apply(fac_xts, 2, single_fac_best_arma_order, arma_order_pairs_df = arma_orders)
-  saveRDS(best_arma_orders, file = "data/interim/best_arma_ssdt.Rds")
+  best_arma_orders <- apply(fac_xts, 2, single_fac_best_arma_order,
+    arma_order_pairs_df = arma_orders
+  )
+  saveRDS(best_arma_orders, file = save_path)
+}
+
+
+if (!interactive()) {
+  # 读取命令行输入
+  option_list <- list(
+    make_option(
+      opt_str = "--data_freq", type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save best arma order data.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- OptionParser(option_list = option_list)
+  opts <- parse_args(opt_parser)
+
+  # 必须提供文件存储路径
+  if (is.null(opts[["out_put"]])) {
+    print_help(opt_parser)
+    stop("Must input the out put file path")
+  }
+
+  # 运行主函数
+  best_arma_mian(
+    fac_data_freq = opts[["data_freq"]],
+    save_path = opts[["out_put"]]
+  )
 }
