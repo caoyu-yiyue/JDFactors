@@ -5,7 +5,7 @@ suppressPackageStartupMessages({
   library(future.apply)
   library(optparse)
 })
-source("src/data/prepare_data.R")
+source("src/data/read_data.R")
 
 
 single_arma_garch_ais <- function(arma_order, data_vector,
