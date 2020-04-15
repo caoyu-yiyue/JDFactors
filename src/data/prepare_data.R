@@ -1,9 +1,10 @@
 # ==============================================================================
 # 从数据库中下载的原始数据开始，读取原始数据、形成所需的数据格式等准备工作
 # ==============================================================================
-library(ISOweek)
-library(xts)
-
+suppressPackageStartupMessages({
+  library(ISOweek)
+  library(xts)
+})
 read_raw <- function(data_freq) {
   # 读取从数据库下载到的原数据。
   # Arguments: data_freq 哪种数据频率的原数据, c("Week", "Month", "Day") 的其中之一
