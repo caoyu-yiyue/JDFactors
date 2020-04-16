@@ -2,6 +2,10 @@
 
 all: data/interim/fac_xts_Week.Rds data/interim/fac_xts_Week.Rds garch_model
 
+clean:
+	trash data/interim/*.Rds
+	trash data/processed/*.Rds
+
 # ================================= prepare data =================================== #
 # 该脚本同时产生三个文件，这里选择其中一个作为target
 data/interim/fac_xts_Week.Rds:
