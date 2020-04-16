@@ -20,3 +20,12 @@ read_best_arma_order <- function(data_path =
   best_arma_order <- readRDS(data_path)
   return(best_arma_order)
 }
+
+
+read_multi_garch_fit <- function(data_path =
+                                   "data/interim/multi_garch_mdl.Rds") {
+  #' @title 读取多变量multi garch fit 对象
+  #' @return rugarch::uGARCHmultifit 即数据没列进行fit 之后的multifit 对象
+  multi_garch_fit_obj <- readRDS(data_path)
+  return(multi_garch_fit_obj)
+}
