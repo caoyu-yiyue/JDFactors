@@ -55,15 +55,18 @@ fit_garch_copula <- function(multigarch_spec, fac_data, copula_type, is_dcc,
 
 copula_all_main <- function() {
   #' @title 计算整体数据多种copula 对象的主函数
+  #' @return 集合了所有copula 的list
 
   multigarch_fit <- read_multi_garch_fit()
   best_arma_order <- read_best_arma_order()
   facs_xts <- read_fac_xts()
+
   multi_garch_spec <- all_facs_multigarch(
     arma_order_df = best_arma_order,
     fit = FALSE
   )
 
+  # 计算每个copula
   static_norm_cop <- fit_garch_copula(
     multigarch_spec = multi_garch_spec,
     fac_data = facs_xts,
@@ -71,4 +74,50 @@ copula_all_main <- function() {
     is_dcc = FALSE,
     multigarch_fit = multigarch_fit
   )
+  static_t_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    fac_data = facs_xts,
+    copula_type = "mvt",
+    is_dcc = FALSE,
+    multigarch_fit = multigarch_fit
+  )
+  dcc_norm_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    fac_data = facs_xts,
+    copula_type = "mvnorm",
+    is_dcc = TRUE,
+    multigarch_fit = multigarch_fit
+  )
+  dcc_t_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    fac_data = facs_xts,
+    copula_type = "mvt",
+    is_dcc = TRUE,
+    multigarch_fit = multigarch_fit
+  )
+  adcc_norm_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    fac_data = facs_xts,
+    copula_type = "mvnorm",
+    is_dcc = TRUE,
+    asymm = TRUE,
+    multigarch_fit = multigarch_fit
+  )
+  adcc_t_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    fac_data = facs_xts,
+    copula_type = "mvt",
+    is_dcc = TRUE,
+    asymm = TRUE,
+    multigarch_fit = multigarch_fit
+  )
+
+  # 将所有的copula 集合为list
+  all_cops <- list(
+    static_norm = static_norm_cop, static_t = static_t_cop,
+    dcc_norm = dcc_norm_cop, dcc_t = dcc_t_cop,
+    adcc_norm = adcc_norm_cop, adcc_t = adcc_t_cop
+  )
+
+  return(all_cops)
 }
