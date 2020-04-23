@@ -29,3 +29,11 @@ read_multi_garch_fit <- function(data_path =
   multi_garch_fit_obj <- readRDS(data_path)
   return(multi_garch_fit_obj)
 }
+
+
+read_all_cops <- function(data_path = "data/processed/all_cops.Rds") {
+  #' @title 读取针对全时常数据计算的所有copula 模型的list
+  # ‘ @return 保存所有copula 的list
+  all_cops <- readRDS(data_path)
+  return(all_cops)
+}
