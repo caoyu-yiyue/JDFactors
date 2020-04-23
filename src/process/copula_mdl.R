@@ -16,7 +16,7 @@ source("src/data/read_data.R")
 # uarch_spec 输入换成multigarch spec 对象
 fit_garch_copula <- function(multigarch_spec, fac_data, copula_type, is_dcc,
                              asymm = FALSE, multigarch_fit = NULL,
-                             use_cluster = TRUE) {
+                             cluster = NULL) {
   #' @title 基于multigarch_spec 对象和一组数据，计算出一个copula fit 对象
   #'
   #' @param multigarch_spec 一个multigarch spec 对象，将传递给 cgarchspec(uspec)
@@ -26,7 +26,7 @@ fit_garch_copula <- function(multigarch_spec, fac_data, copula_type, is_dcc,
   #' @param asymm Bool, default FALSE. 是否使用非对称的dcc 模型。
   #' @param multigarch_fit (optional) uGARCHmultifit 对象，default NULL。
   #' 已经拟合过的multifit 对象。
-  #' @param use_cluster Bool. 是否使用cluster(fork cluster) 进行并行计算
+  #' @param cluster cluster 对象，使用过后需要stopCluster()
   #'
   #' @details 前面的5 个参数均传递给rmgarch::cgarchspec(), 最后两个传递给rmgarch::cgarchfit()
   #' @return cGARCHfit 对象。根据上述的参数拟合完成的cGARCHfit 对象。
@@ -42,12 +42,10 @@ fit_garch_copula <- function(multigarch_spec, fac_data, copula_type, is_dcc,
   )
 
   # 进行copula fit
-  cls <- if (use_cluster) parallel::makeForkCluster(nnodes = 4) else NULL
   cop_fit <- cgarchfit(cop_spec,
-    data = fac_data, cluster = cls,
+    data = fac_data, cluster = cluster,
     fit = multigarch_fit
   )
-  if (use_cluster) stopCluster(cls)
 
   return(cop_fit)
 }
@@ -65,6 +63,7 @@ copula_all_main <- function() {
     arma_order_df = best_arma_order,
     fit = FALSE
   )
+  cls <- parallel::makeForkCluster(4)
 
   # 计算每个copula
   static_norm_cop <- fit_garch_copula(
@@ -72,28 +71,32 @@ copula_all_main <- function() {
     fac_data = facs_xts,
     copula_type = "mvnorm",
     is_dcc = FALSE,
-    multigarch_fit = multigarch_fit
+    multigarch_fit = multigarch_fit,
+    cluster = cls
   )
   static_t_cop <- fit_garch_copula(
     multigarch_spec = multi_garch_spec,
     fac_data = facs_xts,
     copula_type = "mvt",
     is_dcc = FALSE,
-    multigarch_fit = multigarch_fit
+    multigarch_fit = multigarch_fit,
+    cluster = cls
   )
   dcc_norm_cop <- fit_garch_copula(
     multigarch_spec = multi_garch_spec,
     fac_data = facs_xts,
     copula_type = "mvnorm",
     is_dcc = TRUE,
-    multigarch_fit = multigarch_fit
+    multigarch_fit = multigarch_fit,
+    cluster = cls
   )
   dcc_t_cop <- fit_garch_copula(
     multigarch_spec = multi_garch_spec,
     fac_data = facs_xts,
     copula_type = "mvt",
     is_dcc = TRUE,
-    multigarch_fit = multigarch_fit
+    multigarch_fit = multigarch_fit,
+    cluster = cls
   )
   adcc_norm_cop <- fit_garch_copula(
     multigarch_spec = multi_garch_spec,
@@ -101,7 +104,8 @@ copula_all_main <- function() {
     copula_type = "mvnorm",
     is_dcc = TRUE,
     asymm = TRUE,
-    multigarch_fit = multigarch_fit
+    multigarch_fit = multigarch_fit,
+    cluster = cls
   )
   adcc_t_cop <- fit_garch_copula(
     multigarch_spec = multi_garch_spec,
@@ -109,8 +113,10 @@ copula_all_main <- function() {
     copula_type = "mvt",
     is_dcc = TRUE,
     asymm = TRUE,
-    multigarch_fit = multigarch_fit
+    multigarch_fit = multigarch_fit,
+    cluster = cls
   )
+  parallel::stopCluster(cls)
 
   # 将所有的copula 集合为list
   all_cops <- list(
