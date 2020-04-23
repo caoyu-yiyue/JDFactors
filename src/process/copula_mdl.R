@@ -2,7 +2,7 @@
 
 #############################################################################
 # 拟合copula 模型的函数功能。
-# 独立运行脚本时将计算出数据整体的copula 对象
+# 独立运行脚本时将计算出数据整体的copula 对象, 需要传入参数：保存所以copula 对象的路径
 #############################################################################
 
 suppressPackageStartupMessages({
@@ -125,5 +125,11 @@ copula_all_main <- function() {
     adcc_norm = adcc_norm_cop, adcc_t = adcc_t_cop
   )
 
-  return(all_cops)
+  args <- commandArgs(trailingOnly = TRUE)
+  saveRDS(all_cops, file = args[[1]])
+}
+
+
+if (!(interactive())) {
+  copula_all_main()
 }
