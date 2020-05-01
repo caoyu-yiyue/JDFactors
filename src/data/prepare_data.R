@@ -49,8 +49,9 @@ fac_df_to_xts <- function(fac_df) {
   # Values:
   #   xts 对象，保存有原数据的xts 对象。
 
-  # 首先将列名中的1 和Trading 去掉
+  # 首先将列名中的1 和Trading 去掉；将RiskPremium 改为Market
   colnames(fac_df) <- gsub("1|Trading", "", colnames(fac_df))
+  colnames(fac_df) <- sub("RiskPremium", "Market", colnames(fac_df))
   # 转换xts 对象并返回
   xts_obj <- as.xts(fac_df[, -1], order.by = fac_df[, 1])
   return(xts_obj)
