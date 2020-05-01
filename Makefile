@@ -1,6 +1,6 @@
 .PHONY: all prepare_data garch_model
 
-all: data/interim/fac_xts_Week.Rds data/interim/fac_xts_Week.Rds garch_model
+all: data/interim/facs_xts.Rds data/interim/fac_xts_Week.Rds garch_model
 
 clean:
 	trash data/interim/*.Rds
