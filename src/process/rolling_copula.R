@@ -21,14 +21,14 @@ set_cgarchspec_fixed <- function(cspec_obj, cfit_obj) {
 
   # 首先对每个单变量GARCH 模型fix parameter
   fac_num <- length(cspec_obj@umodel$fixed.pars)
-  for (i in 1:(fac_num)) {
+  for (i in 1:fac_num) {
     cspec_obj@umodel$fixed.pars[[i]] <-
       as.list(cfit_obj@model$mpars[cfit_obj@model$midx[, i] == 1, i])
   }
   # 对cGARCHspec 对象固定Joint parameter
   setfixed(cspec_obj) <-
     as.list(cfit_obj@model$mpars[
-      cfit_obj@model$midx[, fac_num + 1] == 1, fac_num + 1
+      cfit_obj@model$midx[, (fac_num + 1)] == 1, (fac_num + 1)
     ])
   return(cspec_obj)
 }
