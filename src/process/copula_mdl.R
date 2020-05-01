@@ -14,22 +14,24 @@ source("src/data/read_data.R")
 
 
 # uarch_spec 输入换成multigarch spec 对象
-fit_garch_copula <- function(multigarch_spec, fac_data, copula_type, is_dcc,
-                             asymm = FALSE, multigarch_fit = NULL,
-                             cluster = NULL) {
+fit_garch_copula <- function(multigarch_spec, copula_type, is_dcc,
+                             asymm = FALSE, fit = TRUE, fac_data = NULL,
+                             multigarch_fit = NULL, cluster = NULL) {
   #' @title 基于multigarch_spec 对象和一组数据，计算出一个copula fit 对象
   #'
   #' @param multigarch_spec 一个multigarch spec 对象，将传递给 cgarchspec(uspec)
-  #' @param fac_data xts 等对象。用于计算模型的数据（xts 等对象）
   #' @param copula_type str, c("mvnorm", "mvt") 的其中之一。copula 模型的类型。
   #' @param is_dcc Bool. 是否使用dcc 即time.varying。
   #' @param asymm Bool, default FALSE. 是否使用非对称的dcc 模型。
+  #' @param fit Bool, default TRUE. 是否进行拟合。如果为FALSE 将返回cGARCHspec 对象。
+  #' @param fac_data xts 等对象。用于计算模型的数据（xts 等对象）
   #' @param multigarch_fit (optional) uGARCHmultifit 对象，default NULL。
   #' 已经拟合过的multifit 对象。
   #' @param cluster cluster 对象，使用过后需要stopCluster()
   #'
   #' @details 前面的5 个参数均传递给rmgarch::cgarchspec(), 最后两个传递给rmgarch::cgarchfit()
-  #' @return cGARCHfit 对象。根据上述的参数拟合完成的cGARCHfit 对象。
+  #' @return fit == TURE 时，cGARCHfit 对象。根据上述的参数拟合完成的cGARCHfit 对象。
+  #' fit == FALSE 时，返回cGARCHspec 对象，即不对模型进行拟合而时返回spec。
 
   # 指定coplua spec
   cop_spec <- cgarchspec(
@@ -41,13 +43,17 @@ fit_garch_copula <- function(multigarch_spec, fac_data, copula_type, is_dcc,
     )
   )
 
-  # 进行copula fit
-  cop_fit <- cgarchfit(cop_spec,
-    data = fac_data, cluster = cluster,
-    fit = multigarch_fit
-  )
+  if (!fit) {
+    return(cop_spec)
+  } else {
+    # 进行copula fit
+    cop_fit <- cgarchfit(cop_spec,
+      data = fac_data, cluster = cluster,
+      fit = multigarch_fit
+    )
 
-  return(cop_fit)
+    return(cop_fit)
+  }
 }
 
 
