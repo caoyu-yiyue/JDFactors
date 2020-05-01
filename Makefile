@@ -8,14 +8,14 @@ clean:
 
 # ================================= prepare data =================================== #
 # 该脚本同时产生三个文件，这里选择其中一个作为target
-data/interim/fac_xts_Week.Rds:
+data/interim/facs_xts.Rds:
 	Rscript --vanilla src/data/prepare_data.R
 
 # ================================= garch model =================================== #
 garch_model: data/interim/best_arma_ssdt_Week.Rds data/interim/multi_garch_mdl.Rds \
 	data/processed/all_cops.Rds
 
-data/interim/best_arma_ssdt_Week.Rds: data/interim/fac_xts_Week.Rds
+data/interim/best_arma_ssdt_Week.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/best_arma.R --data_freq "Week" -o $@
 
 data/interim/multi_garch_mdl.Rds: data/interim/best_arma_ssdt_Week.Rds

@@ -60,8 +60,10 @@ fac_df_to_xts <- function(fac_df) {
 
 prepare_data_main <- function() {
   # 进行数据预备的主函数，把Week, Day, Month 的原始csv 数据都保存为xts 对象。
-  # 保存路径名为data/interim/fac_xts_<freq>_.Rda
+  # 三个xts 对象将组成一个list，name 分别为Week, Day, Month.
+  # 保存路径名为data/interim/facs_xts.Rds
 
+  all_xts_obj <- list()
   for (freq in c("Week", "Month", "Day")) {
     raw_data <- read_raw(data_freq = freq)
 
@@ -75,10 +77,12 @@ prepare_data_main <- function() {
       raw_data[["TradingDate"]] <- as.Date(raw_data[["TradingDate"]])
     }
 
-    # 转换为xts 对象并保存数据
+    # 转换为xts 对象并加入到总list 中
     xts_obj <- fac_df_to_xts(raw_data)
-    saveRDS(xts_obj, file = paste0("data/interim/fac_xts_", freq, ".Rds"))
+    all_xts_obj[[freq]] <- xts_obj
   }
+
+  saveRDS(all_xts_obj, file = "data/interim/facs_xts.Rds")
 }
 
 
