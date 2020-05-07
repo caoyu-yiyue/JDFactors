@@ -2,6 +2,7 @@ suppressPackageStartupMessages({
   library(rmgarch)
   library(xts)
   library(foreach)
+  library(doParallel)
 })
 
 source("src/data/read_data.R")
@@ -53,40 +54,65 @@ cop_garch_spec <- fit_garch_copula(
 )
 
 # ================= rolling funciton part ================= #
-full_rows <- nrow(facs_xts)
-fit_time <- seq.int(
-  from = sixth_year_endpoint,
-  to = full_rows, by = 12
-)
-cls <- parallel::makeForkCluster(4)
-doParallel::registerDoParallel(cls, cores = 2)
-rolling_rcov <- foreach(t = fit_time, .combine = "rbind") %dopar% {
-  # 3. fit 一个garch-copula 模型
-  current_fit <- cgarchfit(spec = cop_garch_spec, data = facs_xts[1:t, ])
+rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
+                                start_row = 296, step_by = 12) {
+  #' @title 对data 根据pure_cgarch_spec, 从第start_row 开始，每step_by(12期) refit
+  #' 一次，保持参数固定向前filter 12 期，然后重复rolling fit，最终输出所有的预测
+  #' cov 矩阵。
+  #'
+  #' @param data xts 对象，即多因子的xts 对象
+  #' @param pure_cgarch_spec rmgarch::cgarchSpec。初始的cgarchSpec 对象。在这里
+  #' 设定norm / t copula；static / dcc copula；以及指定固定参数
+  #' @param start_row int, default 296. 最初进行cgarchfit 所用的数据行数，即in sample data。
+  #' 默认是facs_xts 第6 年末的行。
+  #' @param step_by int, default 12. 每隔多久重新fit 模型，默认12 期。
+  #' @return xts 对象。返回的是每次fit 后向前filter step_by 期的方差-协方差矩阵rcov
 
-  # 4. 设定fixed param 并filter 部分
-  cspec_fixed_param <- set_cgarchspec_fixed(
-    cspec_obj = cop_garch_spec,
-    cfit_obj = current_fit
+  # 数据的总行数，以及需要refit 的行index 数。
+  total_rows <- nrow(data)
+  fit_time <- seq.int(
+    from = start_row,
+    to = total_rows, by = step_by
   )
 
-  # 当总行数与t 相比大于等于12，则filter data 为到t 往后12期，预测期为12
-  # 否则，filter data 为整个facs_xts，预测期为所有数据行 - t
-  if (full_rows - t >= 12) {
-    filter_data <- facs_xts[1:(t + 12), ]
-    forcast_t <- 12
-  } else {
-    filter_data <- facs_xts
-    forcast_t <- full_rows - t
+  cls <- parallel::makeForkCluster(detectCores())
+  doParallel::registerDoParallel(cls)
+  rolling_rcov <- foreach(t = fit_time, .combine = "rbind") %dopar% {
+    # 1. fit 一个garch-copula 模型
+    current_fit <- cgarchfit(spec = pure_cgarch_spec, data = data[1:t, ])
+
+    # 2. 设定fixed param 并filter 部分
+    cspec_fixed_param <- set_cgarchspec_fixed(
+      cspec_obj = pure_cgarch_spec,
+      cfit_obj = current_fit
+    )
+
+    # 当总行数与t 相比大于等于step_by(12)，则filter data 为到t 往后step_by(12)期
+    # 预测期为step_by(12)期；否则，filter data 为整个facs_xts，预测期为所有数据行 - t
+    if (total_rows - t >= step_by) {
+      filter_data <- data[1:(t + step_by), ]
+      forcast_t <- step_by
+    } else {
+      filter_data <- data
+      forcast_t <- total_rows - t
+    }
+
+    # 3. 根据固定参数的garch spec 向前filter
+    current_filter <- cgarchfilter(cspec_fixed_param,
+      data = filter_data, # 这里在数据的最末尾会出现out of bound 问题
+      filter.control = list(n.old = t)
+    )
+
+    # 4. 返回需要的尾部部分
+    forcasted_cov <- tail(rcov(current_filter, output = "matrix"), forcast_t)
+    return(forcasted_cov)
   }
+  parallel::stopCluster(cls)
 
-  current_filter <- cgarchfilter(cspec_fixed_param,
-    data = filter_data, # 这里在数据的最末尾会出现out of bound 问题
-    filter.control = list(n.old = t)
-  )
-
-  # 5. 返回需要的部分
-  forcasted_cov <- tail(rcov(current_filter, output = "matrix"), forcast_t)
-  return(forcasted_cov)
+  return(rolling_rcov)
 }
-stopCluster(cls)
+
+# test_rcov <- rolling_cgarch_rcov(
+#   data = facs_xts[1:(sixth_year_endpoint + 12 * 4)],
+#   pure_cgarch_spec = cop_garch_spec
+# )
