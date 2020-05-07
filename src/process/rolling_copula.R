@@ -1,6 +1,7 @@
 suppressPackageStartupMessages({
   library(rmgarch)
   library(xts)
+  library(foreach)
 })
 
 source("src/data/read_data.R")
@@ -39,7 +40,6 @@ facs_xts <- read_fac_xts()
 year_endponits <- endpoints(facs_xts, on = "year")[-1]
 sixth_year_endpoint <- year_endponits[6]
 
-data_for_fit <- facs_xts[1:sixth_year_endpoint, ]
 
 # 2. 指定cGARCHspec 部分
 arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
@@ -52,15 +52,41 @@ cop_garch_spec <- fit_garch_copula(
   copula_type = "mvt", is_dcc = TRUE, fit = FALSE
 )
 
-# 3. fit 一个garch-copula 模型
-current_fit <- cgarchfit(spec = cop_garch_spec, data = data_for_fit)
+# ================= rolling funciton part ================= #
+full_rows <- nrow(facs_xts)
+fit_time <- seq.int(
+  from = sixth_year_endpoint,
+  to = full_rows, by = 12
+)
+cls <- parallel::makeForkCluster(4)
+doParallel::registerDoParallel(cls, cores = 2)
+rolling_rcov <- foreach(t = fit_time, .combine = "rbind") %dopar% {
+  # 3. fit 一个garch-copula 模型
+  current_fit <- cgarchfit(spec = cop_garch_spec, data = facs_xts[1:t, ])
 
-# 4. 设定fixed param 并filter 部分
-cspec_fixed_param <- set_cgarchspec_fixed(
-  cspec_obj = cop_garch_spec,
-  cfit_obj = current_fit
-)
-current_filter <- cgarchfilter(cspec_fixed_param,
-  data = facs_xts[1:(sixth_year_endpoint + 12), ],
-  filter.control = list(n.old = sixth_year_endpoint)
-)
+  # 4. 设定fixed param 并filter 部分
+  cspec_fixed_param <- set_cgarchspec_fixed(
+    cspec_obj = cop_garch_spec,
+    cfit_obj = current_fit
+  )
+
+  # 当总行数与t 相比大于等于12，则filter data 为到t 往后12期，预测期为12
+  # 否则，filter data 为整个facs_xts，预测期为所有数据行 - t
+  if (full_rows - t >= 12) {
+    filter_data <- facs_xts[1:(t + 12), ]
+    forcast_t <- 12
+  } else {
+    filter_data <- facs_xts
+    forcast_t <- full_rows - t
+  }
+
+  current_filter <- cgarchfilter(cspec_fixed_param,
+    data = filter_data, # 这里在数据的最末尾会出现out of bound 问题
+    filter.control = list(n.old = t)
+  )
+
+  # 5. 返回需要的部分
+  forcasted_cov <- tail(rcov(current_filter, output = "matrix"), forcast_t)
+  return(forcasted_cov)
+}
+stopCluster(cls)
