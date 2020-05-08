@@ -6,6 +6,7 @@ suppressPackageStartupMessages({
 })
 
 source("src/data/read_data.R")
+source("src/config.R")
 source("src/process/multi_garch_mdl.R")
 source("src/process/copula_mdl.R")
 
@@ -36,26 +37,9 @@ set_cgarchspec_fixed <- function(cspec_obj, cfit_obj) {
 }
 
 
-# 1. data 部分
-facs_xts <- read_fac_xts()
-year_endponits <- endpoints(facs_xts, on = "year")[-1]
-sixth_year_endpoint <- year_endponits[6]
-
-
-# 2. 指定cGARCHspec 部分
-arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
-multi_garch_spec <- all_facs_multigarch(
-  arma_order_df = arma_order_for_roll,
-  fit = FALSE
-)
-cop_garch_spec <- fit_garch_copula(
-  multigarch_spec = multi_garch_spec,
-  copula_type = "mvt", is_dcc = TRUE, fit = FALSE
-)
-
-# ================= rolling funciton part ================= #
 rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
-                                start_row = 296, step_by = 12) {
+                                start_row, step_by,
+                                multigarchfit_list = NULL) {
   #' @title 对data 根据pure_cgarch_spec, 从第start_row 开始，每step_by(12期) refit
   #' 一次，保持参数固定向前filter 12 期，然后重复rolling fit，最终输出所有的预测
   #' cov 矩阵。
@@ -64,8 +48,9 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
   #' @param pure_cgarch_spec rmgarch::cgarchSpec。初始的cgarchSpec 对象。在这里
   #' 设定norm / t copula；static / dcc copula；以及指定固定参数
   #' @param start_row int, default 296. 最初进行cgarchfit 所用的数据行数，即in sample data。
-  #' 默认是facs_xts 第6 年末的行。
-  #' @param step_by int, default 12. 每隔多久重新fit 模型，默认12 期。
+  #' @param step_by int. 每隔多久重新fit 模型。
+  #' @param multigarchfit_list 保存multigarchfit 的list。
+  #' 其fit 的日期必须与copula 模型保持一致，且name 为fit 所在的行数。
   #' @return xts 对象。返回的是每次fit 后向前filter step_by 期的方差-协方差矩阵rcov
 
   # 数据的总行数，以及需要refit 的行index 数。
@@ -78,8 +63,16 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
   cls <- parallel::makeForkCluster(detectCores())
   doParallel::registerDoParallel(cls)
   rolling_rcov <- foreach(t = fit_time, .combine = "rbind") %dopar% {
-    # 1. fit 一个garch-copula 模型
-    current_fit <- cgarchfit(spec = pure_cgarch_spec, data = data[1:t, ])
+    # 1. 解析fit 过的multigarchfit 对象，fit 一个garch-copula 模型
+    fitted_multigarchfit <- if (!is.null(multigarchfit_list)) {
+      multigarchfit_list[[as.character(t)]]
+    } else {
+      NULL
+    }
+    current_fit <- cgarchfit(
+      spec = pure_cgarch_spec, data = data[1:t, ],
+      fit = fitted_multigarchfit
+    )
 
     # 2. 设定fixed param 并filter 部分
     cspec_fixed_param <- set_cgarchspec_fixed(
@@ -112,7 +105,91 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
   return(rolling_rcov)
 }
 
-# test_rcov <- rolling_cgarch_rcov(
-#   data = facs_xts[1:(sixth_year_endpoint + 12 * 4)],
-#   pure_cgarch_spec = cop_garch_spec
-# )
+
+rolling_cop_rcov_main <- function() {
+  #' @title rolling 计算copula 模型rcov 的主函数
+  #' @details 将会分别计算一个t-cop_dcc, norm-cop_dcc, t-cop_static, norm-cop_static
+  #' 所对应的rcov，最终保存在一个list 中。
+
+  # 1. 读取必要数据
+  facs_xts <- read_fac_xts()
+  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
+  multigarchfit_list <- read_rolling_multigarchfit()
+
+  # 2. 指定cGARCHspec 部分
+  arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
+  multi_garch_spec <- all_facs_multigarch(
+    arma_order_df = arma_order_for_roll,
+    fit = FALSE
+  )
+
+  # 3. 正式开始滚动fit
+  # 1) t_dcc
+  print("Rolling rcov for t-cop dcc.")
+  t_dcc_cgarch_spec <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    copula_type = "mvt", is_dcc = TRUE, fit = FALSE
+  )
+  t_dcc_rcov <- rolling_cgarch_rcov(
+    data = facs_xts,
+    pure_cgarch_spec = t_dcc_cgarch_spec,
+    start_row = in_sample_end,
+    step_by = ROLLING_STEP,
+    multigarchfit_list = multigarchfit_list
+  )
+
+  # 2) norm_dcc
+  print("Rolling rcov for norm-cop dcc.")
+  norm_dcc_cgarch_spec <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    copula_type = "mvnorm", is_dcc = TRUE, fit = FALSE
+  )
+  norm_dcc_rcov <- rolling_cgarch_rcov(
+    data = facs_xts,
+    pure_cgarch_spec = norm_dcc_cgarch_spec,
+    start_row = in_sample_end,
+    step_by = ROLLING_STEP,
+    multigarchfit_list = multigarchfit_list
+  )
+
+  # 3) t_static
+  print("Rolling rcov for t-cop static.")
+  t_static_cgarch_spec <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    copula_type = "mvt", is_dcc = FALSE, fit = FALSE
+  )
+  t_static_rcov <- rolling_cgarch_rcov(
+    data = facs_xts,
+    pure_cgarch_spec = t_static_cgarch_spec,
+    start_row = in_sample_end,
+    step_by = ROLLING_STEP,
+    multigarchfit_list = multigarchfit_list
+  )
+
+  # 4) norm_static
+  print("Rolling rcov for norm-cop static.")
+  norm_static_cgarch_spec <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    copula_type = "mvnorm", is_dcc = FALSE, fit = FALSE
+  )
+  norm_static_rcov <- rolling_cgarch_rcov(
+    data = facs_xts,
+    pure_cgarch_spec = norm_static_cgarch_spec,
+    start_row = in_sample_end,
+    step_by = ROLLING_STEP,
+    multigarchfit_list = multigarchfit_list
+  )
+
+  all_cop_rcov_list <- list(
+    t_dcc = t_dcc_rcov, norm_dcc = norm_dcc_rcov,
+    t_static = t_static_rcov, norm_static = norm_static_rcov
+  )
+  
+  cmd_args <- commandArgs(trailingOnly = TRUE)
+  saveRDS(all_cop_rcov_list, cmd_args)
+}
+
+
+if (!interactive()) {
+  rolling_cop_rcov_main()
+}
