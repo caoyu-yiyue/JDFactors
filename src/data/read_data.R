@@ -38,3 +38,14 @@ read_all_cops <- function(data_path = "data/processed/all_cops.Rds") {
   all_cops <- readRDS(data_path)
   return(all_cops)
 }
+
+
+in_sample_yearend_row <- function(data, in_sample_year) {
+  #' @title 针对数据的in_sample_year 的年数，找到in_sample 的最后一行行号
+  #' @param data xts 对象，即数据本身
+  #' @param in_sample_year int，指定in sample year 的年数
+  #' @return int. in sample 数据的最后一行行号
+  year_endponits <- xts::endpoints(data, on = "year")[-1]
+  in_sample_end_row <- year_endponits[in_sample_year]
+  return(in_sample_end_row)
+}
