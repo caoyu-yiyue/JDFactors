@@ -1,3 +1,11 @@
+#!/usr/bin/env Rscript
+
+#############################################################################
+# 滚动计算copula 模型对应的rcov。
+# 执行脚本时，将计算出t, norm 分别的dcc 和static copula 对应的rcov
+# 需要传入一个参数：生成文件保存的位置
+#############################################################################
+
 suppressPackageStartupMessages({
   library(rmgarch)
   library(xts)
