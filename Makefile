@@ -1,6 +1,6 @@
 .PHONY: all prepare_data garch_model
 
-all: data/interim/facs_xts.Rds garch_model
+all: data/interim/facs_xts.Rds garch_model rolling_part
 
 clean:
 	trash data/interim/*.Rds
@@ -23,3 +23,9 @@ data/interim/multi_garch_mdl.Rds: data/interim/best_arma_ssdt_Week.Rds
 
 data/processed/all_cops.Rds: data/interim/multi_garch_mdl.Rds
 	Rscript --vanilla src/process/copula_mdl.R $@
+
+# ================================= rolling fit =================================== #
+rolling_part: data/interim/rolling_multigarch.Rds
+
+data/interim/rolling_multigarch.Rds: data/interim/facs_xts.Rds
+	Rscript --vanilla src/process/rolling_multigarch.R $@

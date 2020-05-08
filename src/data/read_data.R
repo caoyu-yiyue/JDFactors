@@ -49,3 +49,10 @@ in_sample_yearend_row <- function(data, in_sample_year) {
   in_sample_end_row <- year_endponits[in_sample_year]
   return(in_sample_end_row)
 }
+
+
+read_rolling_multigarchfit <-
+  function(data_path = "data/interim/rolling_multigarch.Rds") {
+    multigarch_list <- readRDS(data_path)
+    return(multigarch_list)
+  }
