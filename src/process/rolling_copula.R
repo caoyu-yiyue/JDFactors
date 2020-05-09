@@ -87,13 +87,15 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
       expr = {
         cgarchfit(
           spec = pure_cgarch_spec, data = data[1:t, ],
-          fit = fitted_multigarchfit, solver = c("hybird", "solnp")
+          fit = fitted_multigarchfit, solver = c("hybird", "solnp"),
+          fit.control = list(scale = 10000)
         )
       },
       error = function(cond) {
         cgarchfit(
           spec = pure_cgarch_spec, data = data[1:t, ],
-          fit = NULL, solver = c("hybird", "solnp")
+          fit = NULL, solver = c("hybird", "solnp"),
+          fit.control = list(scale = 10000)
         )
       }
     )

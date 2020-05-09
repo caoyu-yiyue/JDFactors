@@ -39,6 +39,7 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
     multi_garch_fit <- multifit(
       multigarch_spec,
       data = tryCatch(data[1:t, ], error = function() data),
+      fit.control = list(scale = 10000),
       solver = "solnp"
     )
 
@@ -47,6 +48,7 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
       multi_garch_fit <- multifit(
         multigarch_spec,
         data = tryCatch(data[1:t, ], error = function() data),
+        fit.control = list(scale = 10000),
         solver = "nlminb"
       )
     }
