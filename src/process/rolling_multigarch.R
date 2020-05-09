@@ -41,6 +41,16 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
       data = tryCatch(data[1:t, ], error = function() data),
       solver = "solnp"
     )
+
+    # 判定是否每个变量都解开了最优化，如果没有，则换一个solver 尝试。
+    if (!.conver_for_multigarchfit(multi_garch_fit)) {
+      multi_garch_fit <- multifit(
+        multigarch_spec,
+        data = tryCatch(data[1:t, ], error = function() data),
+        solver = "nlminb"
+      )
+    }
+
     return(multi_garch_fit)
   }
   parallel::stopCluster(cls)
