@@ -59,6 +59,21 @@ all_facs_multigarch <- function(arma_order_df, facs_data = NULL, fit = TRUE) {
 }
 
 
+.conver_for_multigarchfit <- function(mulgfit_obj) {
+  #' @title 判定一个multigarch_fit 对象中，是否每一个都解开了最优化
+  #' @param mulgfit_obj rugarch::multigarchfit object。
+  #' @return Bool 如果有任何一个变量没有最优化成功，则返回FALSE，否则返回TRUE
+
+  ugfit_objs <- mulgfit_obj@fit
+  conver_flags <- sapply(ugfit_objs, function(ugfit) ugfit@fit$convergence)
+  if (1 %in% conver_flags) {
+    return(FALSE)
+  } else {
+    return(TRUE)
+  }
+}
+
+
 multi_garch_fit_main <- function() {
   #' @title 拟合mutliGARCHfit 的主函数
   #'
