@@ -76,14 +76,26 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
     # 如果t 不在multigarchfit_list 里或者multigarchfit_list 为NULL，都会取出NULL
     fitted_multigarchfit <- multigarchfit_list[[as.character(t)]]
     # 如果fitted_multigarchfit 不是NULL，进行conv 判定，如果没有conv 则改成NULL
-    if (!is.null(fitted_multigarchfit)) {
-      if (!.conver_for_multigarchfit(fitted_multigarchfit)) {
-        fitted_multigarchfit <- NULL
+    # if (!is.null(fitted_multigarchfit)) {
+    #   if (!.conver_for_multigarchfit(fitted_multigarchfit)) {
+    #     fitted_multigarchfit <- NULL
+    #   }
+    # }
+
+    # 尝试进行fit，如果出现错误则不使用fitted_multigarchfit，再试一次
+    current_fit <- tryCatch(
+      expr = {
+        cgarchfit(
+          spec = pure_cgarch_spec, data = data[1:t, ],
+          fit = fitted_multigarchfit, solver = c("hybird", "solnp")
+        )
+      },
+      error = function(cond) {
+        cgarchfit(
+          spec = pure_cgarch_spec, data = data[1:t, ],
+          fit = NULL, solver = c("hybird", "solnp")
+        )
       }
-    }
-    current_fit <- cgarchfit(
-      spec = pure_cgarch_spec, data = data[1:t, ],
-      fit = fitted_multigarchfit, solver = c("hybird", "solnp")
     )
 
     # 2. 设定fixed param 并filter 部分
