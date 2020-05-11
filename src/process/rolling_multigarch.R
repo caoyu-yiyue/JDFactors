@@ -49,21 +49,33 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
     cvar_flags <- .cvar_for_multigarchfit(multi_garch_fit)
     problem_idx <- which(!(conver_flags & cvar_flags))
     for (i in problem_idx) {
-      # 每个fac 尝试最多10 次
-      for (try_time in 1:10) {
+      # 每个fac 尝试最多5 次
+      for (try_time in 1:5) {
         ugfit <- ugarchfit(
           spec = multigarch_spec@spec[[i]],
           data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-          solver = "hybrid"
+          solver = "hybrid", fit.control = list(scale = 10 * try_time)
         )
 
         if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
           # 通过验证，被ugfit 放进multi garch fit 中
-          multi_garch_fit[[i]] <- ugfit
+          multi_garch_fit@fit[[i]] <- ugfit
           break
         }
+
+        # 如果到了最后一次还没有成功，尝试solver：lbfgs
+        if (try_time == 5) {
+          ugfit <- ugarchfit(
+            spec = multigarch_spec@spec[[i]],
+            data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
+            solver = "lbfgs"
+          )
+          if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
+            # 通过验证，被ugfit 放进multi garch fit 中
+            multi_garch_fit@fit[[i]] <- ugfit
+          }
+        }
       }
-      # 如果10 次都失败，这里考虑继续指定lbfgs solver
     }
 
     return(multi_garch_fit)
