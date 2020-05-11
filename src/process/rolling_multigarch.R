@@ -36,21 +36,34 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
   cls <- parallel::makeForkCluster(parallel::detectCores())
   doParallel::registerDoParallel(cls)
   rolling_multigarch_fits <- foreach(t = fit_time) %dopar% {
+    # 首先使用multifit，建立一个multiGARCHfit obj
     multi_garch_fit <- multifit(
       multigarch_spec,
-      data = tryCatch(data[1:t, ], error = function() data),
-      fit.control = list(scale = 10000),
-      solver = "solnp"
+      data = tryCatch(data[1:t, ], error = function(cond) data),
+      # fit.control = list(scale = 10000),
+      solver = "hybrid"
     )
 
-    # 判定是否每个变量都解开了最优化，如果没有，则换一个solver 尝试。
-    if (!.conver_for_multigarchfit(multi_garch_fit)) {
-      multi_garch_fit <- multifit(
-        multigarch_spec,
-        data = tryCatch(data[1:t, ], error = function() data),
-        fit.control = list(scale = 10000),
-        solver = "nlminb"
-      )
+    # 判定是否每个变量都解开了最优化，是否有cvar，如果没有，则对该变量单独fit
+    conver_flags <- .conver_for_multigarchfit(multi_garch_fit)
+    cvar_flags <- .cvar_for_multigarchfit(multi_garch_fit)
+    problem_idx <- which(!(conver_flags & cvar_flags))
+    for (i in problem_idx) {
+      # 每个fac 尝试最多10 次
+      for (try_time in 1:10) {
+        ugfit <- ugarchfit(
+          spec = multigarch_spec@spec[[i]],
+          data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
+          solver = "hybrid"
+        )
+
+        if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
+          # 通过验证，被ugfit 放进multi garch fit 中
+          multi_garch_fit[[i]] <- ugfit
+          break
+        }
+      }
+      # 如果10 次都失败，这里考虑继续指定lbfgs solver
     }
 
     return(multi_garch_fit)
