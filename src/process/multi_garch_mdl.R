@@ -62,33 +62,25 @@ all_facs_multigarch <- function(arma_order_df, facs_data = NULL, fit = TRUE) {
 .conver_for_multigarchfit <- function(mulgfit_obj) {
   #' @title 判定一个multigarch_fit 对象中，是否每一个都解开了最优化
   #' @param mulgfit_obj rugarch::multigarchfit object。
-  #' @return Bool 如果有任何一个变量没有最优化成功，则返回FALSE，否则返回TRUE
+  #' @return vector of Bool 标示每个变量是否都conver的flag
 
   ugfit_objs <- mulgfit_obj@fit
   conver_flags <- sapply(ugfit_objs, function(ugfit) ugfit@fit$convergence)
-  if (1 %in% conver_flags) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
+  bool_conver_flags <- !as.logical(conver_flags)
+  return(bool_conver_flags)
 }
 
 
 .cvar_for_multigarchfit <- function(mulgfit_obj) {
   #' @title 判定一个multigarch_fit 对象中，是否每一个ugarchfit@fit 都有slot cvar
   #' @param mulgfit_obj rugarch::multigarchfit object。
-  #' @return Bool 如果有任何一个ugarchfit 没有cvar，则返回FALSE，否则返回TRUE
+  #' @return vector of Bool 标示每个rugarchfit 中是否都有"cvar"的flag
 
   ugfit_objs <- mulgfit_obj@fit
   have_cvar_flags <- sapply(ugfit_objs, function(ugfit) {
     "cvar" %in% names(ugfit@fit)
   })
-
-  if (FALSE %in% have_cvar_flags) {
-    return(FALSE)
-  } else {
-    return(TRUE)
-  }
+  return(as.logical(have_cvar_flags))
 }
 
 
