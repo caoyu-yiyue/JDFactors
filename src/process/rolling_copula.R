@@ -68,7 +68,7 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
     to = total_rows, by = step_by
   )
 
-  cls <- parallel::makeForkCluster(detectCores())
+  cls <- parallel::makeForkCluster(parallel::detectCores())
   doParallel::registerDoParallel(cls)
   rolling_rcov <- foreach(t = fit_time, .combine = "rbind") %dopar% {
     # 1. 解析fit 过的multigarchfit 对象，fit 一个garch-copula 模型
@@ -123,7 +123,10 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
     )
 
     # 4. 返回需要的尾部部分
-    forcasted_cov <- tail(rcov(current_filter, output = "matrix"), forcast_t)
+    forcasted_cov <- tail(
+      rmgarch::rcov(current_filter, output = "matrix"),
+      forcast_t
+    )
     return(forcasted_cov)
   }
   parallel::stopCluster(cls)
