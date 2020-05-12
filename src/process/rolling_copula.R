@@ -45,6 +45,50 @@ set_cgarchspec_fixed <- function(cspec_obj, cfit_obj) {
 }
 
 
+multisol_cgarchfit <- function(spec, data, fit = NULL, ...) {
+  #' @title 依此使用每个sovler 进行cgarchfit，顺序为"solnp", "nlminb", "gosolnp", "lbfgs"
+  #'
+  #' @param spec cGARCHspec 对象。
+  #' @param data xts 对象。
+  #' @param fit uGARCHmultifit 对象。已经拟合过的GARCH 模型
+  #' @param ... 其他的参数，将传递给rmgarch::cgarchfit
+  #' @details 函数将会依此使用"solnp", "nlminb", "gosolnp", "lbfgs" solver 求解，
+  #' 直到返回一个cGARCHfit 对象。
+  #' @return 如果拟合成功，将会返回一个rmgarch::cGARCHfit 对象
+  #' 否则，如果拟合失败导致退化会返回一个rugarch::multiGARCHfit；
+  #' 如果第四个solver 拟合失败，将会导致返回一个NULL 对象。
+
+  # 依此使用每个solver 进行cgarch 拟合
+  solvers <- c("solnp", "nlminb", "gosolnp", "lbfgs")
+  for (solver in solvers) {
+    # solver 使用时可能会出现错误，如果出错则直接赋值为NULL
+    cgfit <- tryCatch(
+      expr = {
+        cgarchfit(
+          spec = spec, data = data,
+          fit = fit, solver = c("hybrid", solver), ...
+        )
+      },
+      error = function(cond) {
+        NULL
+      }
+    )
+
+    # 如果class 是cGARCHfit 时，表示拟合成功，退出循环；否则会进入下一个循环
+    if (is(cgfit, "cGARCHfit")) {
+      break
+    }
+
+    # 当第四个solver 也失败时会运行到这里，抛出一个Warning。
+    if (solver == solvers[length(solvers)]) {
+      warning("Not convergence with every solver.")
+    }
+  }
+
+  return(cgfit)
+}
+
+
 rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
                                 start_row, step_by,
                                 multigarchfit_list = NULL) {
@@ -71,34 +115,25 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
   cls <- parallel::makeForkCluster(parallel::detectCores())
   doParallel::registerDoParallel(cls)
   rolling_rcov <- foreach(t = fit_time, .combine = "rbind") %dopar% {
+    # rolling_rcov <- for (t in fit_time) {
     # 1. 解析fit 过的multigarchfit 对象，fit 一个garch-copula 模型
 
     # 如果t 不在multigarchfit_list 里或者multigarchfit_list 为NULL，都会取出NULL
     fitted_multigarchfit <- multigarchfit_list[[as.character(t)]]
-    # 如果fitted_multigarchfit 不是NULL，进行conv 判定，如果没有conv 则改成NULL
-    # if (!is.null(fitted_multigarchfit)) {
-    #   if (!.conver_for_multigarchfit(fitted_multigarchfit)) {
-    #     fitted_multigarchfit <- NULL
-    #   }
-    # }
 
-    # 尝试进行fit，如果出现错误则不使用fitted_multigarchfit，再试一次
-    current_fit <- tryCatch(
-      expr = {
-        cgarchfit(
-          spec = pure_cgarch_spec, data = data[1:t, ],
-          fit = fitted_multigarchfit, solver = c("hybrid", "solnp"),
-          fit.control = list(scale = 10000)
-        )
-      },
-      error = function(cond) {
-        cgarchfit(
-          spec = pure_cgarch_spec, data = data[1:t, ],
-          fit = NULL, solver = c("hybrid", "solnp"),
-          fit.control = list(scale = 10000)
-        )
+    # 依此使用不同的scale 尝试五次
+    for (try_time in 1:5) {
+      current_fit <- multisol_cgarchfit(
+        spec = pure_cgarch_spec, data = data[1:t, ],
+        fit = fitted_multigarchfit,
+        fit.control = list(scale = 10 * try_time)
+      )
+
+      # 如果current_fit 对象类型为cGARCHfit，停止循环即可
+      if (is(current_fit, "cGARCHfit")) {
+        break
       }
-    )
+    }
 
     # 2. 设定fixed param 并filter 部分
     cspec_fixed_param <- set_cgarchspec_fixed(
@@ -219,6 +254,6 @@ rolling_cop_rcov_main <- function() {
 }
 
 
-if (!interactive()) {
+if (interactive()) {
   rolling_cop_rcov_main()
 }
