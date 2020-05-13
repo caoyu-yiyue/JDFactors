@@ -86,6 +86,6 @@ prepare_data_main <- function() {
 }
 
 
-if (!interactive()) {
+if (sys.nframe() == 0) {
   prepare_data_main()
 }

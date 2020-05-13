@@ -110,6 +110,6 @@ rolling_multigarch_main <- function() {
 }
 
 
-if (!interactive()) {
+if (sys.nframe() == 0) {
   rolling_multigarch_main()
 }

@@ -80,7 +80,7 @@ best_arma_mian <- function(fac_data_freq, save_path) {
 }
 
 
-if (!interactive()) {
+if (sys.nframe() == 0) {
   # 读取命令行输入
   option_list <- list(
     make_option(

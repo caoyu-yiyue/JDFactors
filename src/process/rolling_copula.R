@@ -254,6 +254,6 @@ rolling_cop_rcov_main <- function() {
 }
 
 
-if (interactive()) {
+if (sys.nframe() == 0) {
   rolling_cop_rcov_main()
 }

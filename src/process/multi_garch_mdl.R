@@ -103,6 +103,6 @@ multi_garch_fit_main <- function() {
 }
 
 
-if (!interactive()) {
+if (sys.nframe() == 0) {
   multi_garch_fit_main()
 }

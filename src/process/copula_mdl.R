@@ -136,6 +136,6 @@ copula_all_main <- function() {
 }
 
 
-if (!(interactive())) {
+if (sys.nframe() == 0) {
   copula_all_main()
 }
