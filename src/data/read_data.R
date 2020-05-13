@@ -56,3 +56,24 @@ read_rolling_multigarchfit <-
     multigarch_list <- readRDS(data_path)
     return(multigarch_list)
   }
+
+
+read_rolling_cop_rcov <-
+  function(data_path = "data/interim/rolling_cop_rcov.Rds", which) {
+    #' @title 读取rolling copula fit 得到的滚动一步预测方差-协方差矩阵(rcov)
+    #'
+    #' @param data_path str. 保存数据的路径
+    #' @param which str. one of c("t_dcc", "norm_dcc", "t_static",
+    #' "norm_static", "all")
+    #' 指定需要返回哪种copula 模型生成的rcov。
+    #' @return which == "all" 时，将返回包含四种copula rcov 的list，每个都是xts 对象
+    #' which 为其他时，返回该指定的copula 生成的rcov。
+
+    rolling_cop_rcov_list <- readRDS(data_path)
+    cop_rcov <- if (which == "all") {
+      rolling_cop_rcov_list
+    } else {
+      rolling_cop_rcov_list[[which]]
+    }
+    return(cop_rcov)
+  }
