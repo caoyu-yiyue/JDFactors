@@ -53,6 +53,10 @@ in_sample_yearend_row <- function(data, in_sample_year) {
 
 read_rolling_multigarchfit <-
   function(data_path = "data/interim/rolling_multigarch.Rds") {
+    #' @title 读取rolling mutiplegarch fit 对象的list
+    #' @param data_path 保存数据的路径
+    #' @return list of uGARCHmultifit，以拟合garch 时的数据行数为names
+
     multigarch_list <- readRDS(data_path)
     return(multigarch_list)
   }
