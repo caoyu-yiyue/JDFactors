@@ -81,3 +81,13 @@ read_rolling_cop_rcov <-
     }
     return(cop_rcov)
   }
+
+
+read_rolling_mean <- function(data_path = "data/interim/rolling_mean.Rds") {
+  #' @title 读取rolling mean(滚动几何平均值)的 xts 对象。
+  #' @param 读取数据的路径
+  #' @return xts. 即保存了rolling geom mean 的xts 对象
+
+  rolling_mean_xts <- readRDS(data_path)
+  return(rolling_mean_xts)
+}
