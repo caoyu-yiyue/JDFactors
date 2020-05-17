@@ -13,7 +13,7 @@ data/interim/facs_xts.Rds:
 
 # ================================= garch model =================================== #
 garch_model: data/interim/best_arma_ssdt_Week.Rds data/interim/multi_garch_mdl.Rds \
-	data/processed/all_cops.Rds
+	data/processed/all_cops.Rds data/interim/opt_weights.Rds
 
 data/interim/best_arma_ssdt_Week.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/best_arma.R --data_freq "Week" -o $@
@@ -36,3 +36,6 @@ data/interim/rolling_cop_rcov.Rds: data/interim/rolling_multigarch.Rds
 
 data/interim/rolling_mean.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_mean.R $@
+
+data/interim/opt_weights.Rds: data/interim/rolling_cop_rcov.Rds data/interim/rolling_mean.Rds
+	Rscript --vanilla src/process/weight_optimize.R $@
