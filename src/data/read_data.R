@@ -79,6 +79,13 @@ read_rolling_cop_rcov <-
     } else {
       rolling_cop_rcov_list[[which]]
     }
+
+    # 如果读取的数据为NULL，应该为which 参数不合法，报错。
+    if (is.null(opt_weights)) {
+      stop("Read NULL Data. Seems Wrong 'which' Parameter.")
+    }
+
+
     return(cop_rcov)
   }
 
