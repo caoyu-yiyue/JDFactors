@@ -102,6 +102,15 @@ read_rolling_mean <- function(data_path = "data/interim/rolling_mean.Rds") {
 
 read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
                              which) {
+  #' @title 读取滚动最优化求得的权重值
+  #' @param data_path str. 保存数据的路径
+  #' @param which str. one of c("t_dcc", "norm_dcc", "t_static",
+  #' "norm_static", "all")
+  #' 指定需要返回哪种copula 模型计算的最优权重。
+  #' @return which == "all" 时，将返回包含四种copula 最优权重的list，每个都是xts 对象
+  #' which 为其他时，返回该指定的copula 计算所得的权重。
+
+
   rolling_cop_rcov_list <- readRDS(data_path)
   opt_weights <- if (which == "all") {
     rolling_cop_rcov_list
