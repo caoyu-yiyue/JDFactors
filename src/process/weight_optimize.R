@@ -59,7 +59,7 @@ source("src/data/read_data.R")
 }
 
 
-rolling_opt <- function(data, n_fac = 5, sum_1 = TRUE) {
+rolling_opt <- function(data, gamma, n_fac = 5, sum_1 = TRUE) {
   #' @title 针对一个mean 和var-cvar 合并在一起的数据框，滚动求出最优权重
   #' @param data 前n_fac 列为mean，后面的n * (n + 1) / 2 列为var-cvar 数列的数据
   #' 其中，mean 列的列名将成为权重列的列名。
@@ -86,7 +86,7 @@ rolling_opt <- function(data, n_fac = 5, sum_1 = TRUE) {
   # 使用上面的限制条件，对每一行解最优化
   weights_matrix <- apply(data,
     MARGIN = 1,
-    FUN = .opt_single_day, risk_pref_coef = 7,
+    FUN = .opt_single_day, risk_pref_coef = gamma,
     amat = amat, bvec = bvec, meq = meq, n_fac = 5
   )
 
@@ -100,6 +100,9 @@ rolling_opt <- function(data, n_fac = 5, sum_1 = TRUE) {
 
 roll_opt_main <- function() {
   #' @title 进行权重最优化的主函数
+  #' @details 函数将生成一个二级list 并保存到脚本输入的第一个参数中。
+  #' 一级key 为gamma：c(3, 8, 20, 50)；
+  #' 二级key 为cop_type: c("t_dcc", "norm_dcc", "t_static", "norm_static")
 
   # 读取mean 数据
   rolling_mean <- read_rolling_mean()
@@ -110,12 +113,18 @@ roll_opt_main <- function() {
   rcov_names <- names(all_rcovs)
 
   # 对每个rcov 循环，与mean 合并并最优化
+  gammas <- c(3, 8, 20, 50)
   opt_weights <- list()
-  for (name in rcov_names) {
-    rcov_xts <- read_rolling_cop_rcov(which = name)
-    mean_rcov_merged <- cbind(rolling_mean, rcov_xts)
-    opt_weight <- rolling_opt(data = mean_rcov_merged, n_fac = n_fac, sum_1 = TRUE)
-    opt_weights[[name]] <- opt_weight
+  for (gamma in gammas) {
+    for (name in rcov_names) {
+      rcov_xts <- read_rolling_cop_rcov(which = name)
+      mean_rcov_merged <- cbind(rolling_mean, rcov_xts)
+      opt_weight <- rolling_opt(
+        data = mean_rcov_merged, gamma = gamma,
+        n_fac = n_fac, sum_1 = TRUE
+      )
+      opt_weights[[as.character(gamma)]][[name]] <- opt_weight
+    }
   }
 
   # 保存到输入的路径当中。
