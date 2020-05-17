@@ -91,3 +91,20 @@ read_rolling_mean <- function(data_path = "data/interim/rolling_mean.Rds") {
   rolling_mean_xts <- readRDS(data_path)
   return(rolling_mean_xts)
 }
+
+
+read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
+                             which) {
+  rolling_cop_rcov_list <- readRDS(data_path)
+  opt_weights <- if (which == "all") {
+    rolling_cop_rcov_list
+  } else {
+    rolling_cop_rcov_list[[which]]
+  }
+
+  if (is.null(opt_weights)) {
+    stop("Read NULL Data. Seems Wrong 'which' Parameter.")
+  }
+
+  return(opt_weights)
+}
