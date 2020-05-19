@@ -56,15 +56,29 @@ rolling_sigma_forcast <- function(multi_garch_fit_list, data, step_by) {
 }
 
 
+in_or_out_sample_cor <- function(data, in_sample_years) {
+  # 先找到in sample 的最后一行
+  in_sample_end_row <- in_sample_yearend_row(
+    data = data,
+    in_sample_year = in_sample_years
+  )
+  cors_list <- list(in_sample_cor = cor(data[1:in_sample_end_row]), 
+       out_sample_cor = cor(data[(in_sample_end_row + 1):nrow(data)]))
+  return(cors_list)
+}
+
+
 fix_cor2cov_main <- function() {
   facs_xts <- read_fac_xts()
   multigarch_list <- read_rolling_multigarchfit()
 
+  cors_list <- in_or_out_sample_cor(facs_xts, IN_SAMPLE_YEARS)
   forcasted_sigma_xts <- rolling_sigma_forcast(
     multi_garch_fit_list = multigarch_list,
     data = facs_xts,
     step_by = ROLLING_STEP
   )
+
 }
 
 fix_cor2cov_main()
