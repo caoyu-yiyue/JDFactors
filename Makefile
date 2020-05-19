@@ -40,5 +40,6 @@ data/interim/fixed_cor2cov.Rds: data/interim/rolling_multigarch.Rds
 data/interim/rolling_mean.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_mean.R $@
 
-data/interim/opt_weights.Rds: data/interim/rolling_cop_rcov.Rds data/interim/rolling_mean.Rds
+data/interim/opt_weights.Rds: data/interim/rolling_cop_rcov.Rds data/interim/fixed_cor2cov.Rds \
+ data/interim/rolling_mean.Rds
 	Rscript --vanilla src/process/weight_optimize.R $@
