@@ -99,20 +99,19 @@ read_fixed_cor_rcov <-
     #' 指定需要返回哪种copula 模型生成的rcov。
     #' @return which == "all" 时，将返回包含样本内（外）cor 计算的两个rcov 的list，每个都是xts 对象
     #' which 为其他时，返回该指定的cor matrix 生成的rcov。
-    
+
     fixed_cor_gen_rcov_list <- readRDS(data_path)
     fixed_cor_rcov <- if (which == "all") {
       fixed_cor_gen_rcov_list
     } else {
       fixed_cor_gen_rcov_list[[which]]
     }
-    
+
     # 如果读取的数据为NULL，应该为which 参数不合法，报错。
     if (is.null(fixed_cor_rcov)) {
       stop("Read NULL Data. Seems Wrong 'which' Parameter.")
     }
-    
-    
+
     return(fixed_cor_rcov)
   }
 
