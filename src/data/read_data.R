@@ -90,6 +90,33 @@ read_rolling_cop_rcov <-
   }
 
 
+read_fixed_cor_rcov <-
+  function(data_path = "data/interim/fixed_cor2cov.Rds", which) {
+    #' @title 读取使用样本内（外）cor matrix 得到的滚动一步预测方差-协方差矩阵(rcov)
+    #'
+    #' @param data_path str. 保存数据的路径
+    #' @param which str. one of c("fixed_cor.IN_SAM", "fixed_cor.OUT_SAM"")
+    #' 指定需要返回哪种copula 模型生成的rcov。
+    #' @return which == "all" 时，将返回包含样本内（外）cor 计算的两个rcov 的list，每个都是xts 对象
+    #' which 为其他时，返回该指定的cor matrix 生成的rcov。
+    
+    fixed_cor_gen_rcov_list <- readRDS(data_path)
+    fixed_cor_rcov <- if (which == "all") {
+      fixed_cor_gen_rcov_list
+    } else {
+      fixed_cor_gen_rcov_list[[which]]
+    }
+    
+    # 如果读取的数据为NULL，应该为which 参数不合法，报错。
+    if (is.null(fixed_cor_rcov)) {
+      stop("Read NULL Data. Seems Wrong 'which' Parameter.")
+    }
+    
+    
+    return(fixed_cor_rcov)
+  }
+
+
 read_rolling_mean <- function(data_path = "data/interim/rolling_mean.Rds") {
   #' @title 读取rolling mean(滚动几何平均值)的 xts 对象。
   #' @param 读取数据的路径
