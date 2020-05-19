@@ -91,7 +91,9 @@ rolling_opt <- function(data, gamma, n_fac = 5, sum_1 = TRUE) {
   )
 
   # 整理apply 传回的数据的格式，转置、变xts、加名字
-  trans_xts_obj <- as.xts(t(weights_matrix))
+  trans_xts_obj <- as.xts(t(weights_matrix),
+    order.by = as.Date(colnames(weights_matrix))
+  )
   names(trans_xts_obj) <- names(data)[1:n_fac]
 
   return(trans_xts_obj)

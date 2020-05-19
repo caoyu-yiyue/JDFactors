@@ -101,9 +101,10 @@ cors2covs <- function(cor_mat, sigma_xts) {
     return(flat_cov_vec)
   }
 
-  # 将上面的函数应用到sigma_xts 的每一行上
+  # 将上面的函数应用到sigma_xts 的每一行上，结果需要转置，并且重新设置xts 对象
+  # 直接对apply 的结果转置再生成xts 将导致index 带上时区，以后很难对齐数据
   covs_mat <- apply(sigma_xts, 1, FUN = .single_row_cor2cov, cor_mat = cor_mat)
-  covs_xts <- as.xts(t(covs_mat))
+  covs_xts <- as.xts(t(covs_mat), order.by = as.Date(colnames(covs_mat)))
 
   # 对列名进行组合，加到展开的covs vector 上
   # 算法来自rmgarch 包中未export 的函数make.cov.names
@@ -130,7 +131,8 @@ cors2covs <- function(cor_mat, sigma_xts) {
 fix_cor2cov_main <- function() {
   #' @title 根据multiGARCHfit list 和额外的固定cor matrix 计算每日cov matrix 的主函数
   #' @return NULL. 但将会生成一个list，包含使用样本内和样本外cor matrix 计算所得的
-  #' 每日cov matrix 的两个xts 对象。list name 为c("fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
+  #' 每日cov matrix 的两个xts 对象。
+  #' list name 为c("fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
 
   # 读取因子数据和multiGARCHfit 对象的list
   facs_xts <- read_fac_xts()
