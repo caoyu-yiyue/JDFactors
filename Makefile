@@ -26,13 +26,16 @@ data/processed/all_cops.Rds: data/interim/multi_garch_mdl.Rds
 
 # ================================= rolling fit =================================== #
 rolling_part: data/interim/rolling_multigarch.Rds data/interim/rolling_cop_rcov.Rds \
-	data/interim/rolling_mean.Rds
+	data/interim/fixed_cor2cov.Rds data/interim/rolling_mean.Rds
 
 data/interim/rolling_multigarch.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_multigarch.R $@
 
 data/interim/rolling_cop_rcov.Rds: data/interim/rolling_multigarch.Rds
 	Rscript --vanilla src/process/rolling_copula.R $@
+
+data/interim/fixed_cor2cov.Rds: data/interim/rolling_multigarch.Rds
+	Rscript --vanilla src/process/fixed_cor2cov.R $@
 
 data/interim/rolling_mean.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_mean.R $@
