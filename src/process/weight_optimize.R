@@ -111,7 +111,9 @@ roll_opt_main <- function() {
   n_fac <- ncol(rolling_mean)
 
   # 读取保存所有rcov 的list
-  all_rcovs <- read_rolling_cop_rcov(which = "all")
+  cop_rcovs <- read_rolling_cop_rcov(which = "all")
+  fixed_cor_rcovs <- read_fixed_cor_rcov(which = "all")
+  all_rcovs <- append(cop_rcovs, fixed_cor_rcovs)
   rcov_names <- names(all_rcovs)
 
   # 对每个rcov 循环，与mean 合并并最优化
@@ -119,7 +121,7 @@ roll_opt_main <- function() {
   opt_weights <- list()
   for (gamma in gammas) {
     for (name in rcov_names) {
-      rcov_xts <- read_rolling_cop_rcov(which = name)
+      rcov_xts <- all_rcovs[[name]]
       mean_rcov_merged <- cbind(rolling_mean, rcov_xts)
       opt_weight <- rolling_opt(
         data = mean_rcov_merged, gamma = gamma,
