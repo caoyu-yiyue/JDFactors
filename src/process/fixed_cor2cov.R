@@ -80,6 +80,26 @@ rolling_sigma_forcast <- function(multi_garch_fit_list, data, step_by) {
 }
 
 
+.make_flat_cov_names <- function(fac_names) {
+  #' @title 对输入的列名进行组合，然后按照cov 矩阵lower.tri 的方向展开成向量。
+  #' @param fac_names 因子名，即需要进行组合的列名
+  #' @details 算法来自rmgarch 包中未export 的函数make.cov.names
+  n <- length(fac_names)
+  names_mat <- matrix(NA, n, n) # 创建一个空matrix，用来放名字组合
+  diag(names_mat) <- fac_names
+  for (i in 1:n) {
+    for (j in 1:n) {
+      if (i == j) {
+        next
+      }
+      names_mat[i, j] <- paste0(fac_names[i], ":", fac_names[j])
+    }
+  }
+  flat_names <- names_mat[lower.tri(names_mat, diag = TRUE)]
+  return(flat_names)
+}
+
+
 cors2covs <- function(cor_mat, sigma_xts) {
   #' @title 根据固定的相关系数矩阵cor_mat，以及每天的sd(这里是sigma_xts)，计算出每天展平的方差-协方差向量
   #' @param cor_mat 一个固定的相关系数矩阵
@@ -101,21 +121,8 @@ cors2covs <- function(cor_mat, sigma_xts) {
   covs_mat <- apply(sigma_xts, 1, FUN = .single_row_cor2cov, cor_mat = cor_mat)
   covs_xts <- as.xts(t(covs_mat), order.by = as.Date(colnames(covs_mat)))
 
-  # 对列名进行组合，加到展开的covs vector 上
-  # 算法来自rmgarch 包中未export 的函数make.cov.names
   fac_names <- colnames(sigma_xts)
-  n <- length(fac_names)
-  names_mat <- matrix(NA, n, n) # 创建一个空matrix，用来放名字组合
-  diag(names_mat) <- fac_names
-  for (i in 1:n) {
-    for (j in 1:n) {
-      if (i == j) {
-        next
-      }
-      names_mat[i, j] <- paste0(fac_names[i], ":", fac_names[j])
-    }
-  }
-  flat_names <- names_mat[lower.tri(names_mat, diag = TRUE)]
+  flat_names <- .make_flat_cov_names(fac_names = fac_names)
 
   # 命名并输出
   colnames(covs_xts) <- flat_names
