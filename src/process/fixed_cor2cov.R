@@ -130,6 +130,29 @@ cors2covs <- function(cor_mat, sigma_xts) {
 }
 
 
+static_in_sam_cov <- function(data, in_sample_end_row) {
+  total_row <- nrow(data)
+  in_sample_data <- data[1:in_sample_end_row, ]
+  out_sam_index <- index(data)[(in_sample_end_row + 1):total_row]
+
+  # 计算 in_sample 时期的cov，并展平
+  in_sam_cov <- cov(in_sample_data)
+  flat_cov <- in_sam_cov[lower.tri(in_sam_cov, diag = TRUE)]
+
+  # 将一行重复out_of_sample 行数一样的次数，组成一个matrix
+  flat_cov_mat <- do.call("rbind", replicate(
+    n = length(out_sam_index),
+    flat_cov, simplify = FALSE
+  ))
+
+  # 给matrix 的列重命名，转换为xts 同时加入index
+  colnames(flat_cov_mat) <- .make_flat_cov_names(colnames(data))
+  static_cov_xts <- as.xts(flat_cov_mat, order.by = out_sam_index)
+
+  return(static_cov_xts)
+}
+
+
 fix_cor2cov_main <- function() {
   #' @title 根据multiGARCHfit list 和额外的固定cor matrix 计算每日cov matrix 的主函数
   #' @return NULL. 但将会生成一个list，包含使用样本内和样本外cor matrix 计算所得的
@@ -158,6 +181,13 @@ fix_cor2cov_main <- function() {
     FUN = cors2covs,
     sigma_xts = forcasted_sigma_xts
   )
+
+  # 计算静态的in sample cov，并加入到结果list 中
+  static_cov_xts <- static_in_sam_cov(
+    data = facs_xts,
+    in_sample_end_row = in_sample_end_row
+  )
+  flat_covs_list[["static_benchmark"]] <- static_cov_xts
 
   # 保存到输入的路径当中。
   cmd_args <- commandArgs(trailingOnly = TRUE)
