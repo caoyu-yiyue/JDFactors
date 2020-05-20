@@ -2,7 +2,8 @@
 
 #############################################################################
 # 根据multiGARCHfit list fitler 得出的每日sigma，和额外的样本内或外的相关系数
-# 矩阵cor matrix，转换计算成“方差-协方差矩阵”cov matrix
+# 矩阵cor matrix，转换计算成“方差-协方差矩阵”cov matrix。
+# 此外，再计算一个使用样本内的cov 在样本外时期重复的benchmark cov 矩阵。
 # 独立运行脚本时需要传入一个参数，即生成文件的保存路径。
 #############################################################################
 
@@ -131,6 +132,12 @@ cors2covs <- function(cor_mat, sigma_xts) {
 
 
 static_in_sam_cov <- function(data, in_sample_end_row) {
+  #' @title 计算样本期内的cov，展平并填充到样本外的每一期，作为benchmark 使用
+  #'
+  #' @param data 计算cov 的数据
+  #' @param in_sample_end_row in sample 部分的行数
+  #' @return xts 对象。index 为样本外时间，每一行都是样本内的展平cov。
+
   total_row <- nrow(data)
   in_sample_data <- data[1:in_sample_end_row, ]
   out_sam_index <- index(data)[(in_sample_end_row + 1):total_row]
