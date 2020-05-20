@@ -104,7 +104,8 @@ roll_opt_main <- function() {
   #' @title 进行权重最优化的主函数
   #' @details 函数将生成一个二级list 并保存到脚本输入的第一个参数中。
   #' 一级key 为gamma：c(3, 8, 20, 50)；
-  #' 二级key 为cop_type: c("t_dcc", "norm_dcc", "t_static", "norm_static")
+  #' 二级key 为cop_type: c("t_dcc", "norm_dcc", "t_static", "norm_static",
+  #' "fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
 
   # 读取mean 数据
   rolling_mean <- read_rolling_mean()
