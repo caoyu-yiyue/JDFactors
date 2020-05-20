@@ -16,7 +16,7 @@ source("src/data/read_data.R")
 source("src/config.R")
 
 
-in_or_out_sample_cor <- function(data, in_sample_years) {
+in_or_out_sample_cor <- function(data, in_sample_end_row) {
   #' @title 根据in sample 的年份，对数据的in sample 和out sample 部分分别计算一个相关系数矩阵cor
   #'
   #' @param data xts 对象。需要处理的数据
@@ -24,11 +24,6 @@ in_or_out_sample_cor <- function(data, in_sample_years) {
   #' @return list of 2 cor matrix. 包含两个cor matrix 的list。
   #' names 为c("fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
 
-  # 先找到in sample 的最后一行
-  in_sample_end_row <- in_sample_yearend_row(
-    data = data,
-    in_sample_year = in_sample_years
-  )
   cors_list <- list(
     fixed_cor.IN_SAM = cor(data[1:in_sample_end_row]),
     fixed_cor.OUT_SAM = cor(data[(in_sample_end_row + 1):nrow(data)])
@@ -137,9 +132,13 @@ fix_cor2cov_main <- function() {
   # 读取因子数据和multiGARCHfit 对象的list
   facs_xts <- read_fac_xts()
   multigarch_list <- read_rolling_multigarchfit()
+  in_sample_end_row <- in_sample_yearend_row(
+    data = facs_xts,
+    in_sample_year = IN_SAMPLE_YEARS
+  )
 
   # 计算样本内与样本外的cor 即相关系数矩阵
-  cors_list <- in_or_out_sample_cor(facs_xts, IN_SAMPLE_YEARS)
+  cors_list <- in_or_out_sample_cor(facs_xts, in_sample_end_row)
   # 滚动fitler 预测sigma
   forcasted_sigma_xts <- rolling_sigma_forcast(
     multi_garch_fit_list = multigarch_list,
