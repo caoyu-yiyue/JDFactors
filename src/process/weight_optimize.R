@@ -128,7 +128,9 @@ roll_opt_main <- function() {
         data = mean_rcov_merged, gamma = gamma,
         n_fac = n_fac, sum_1 = TRUE
       )
-      opt_weights[[as.character(gamma)]][[name]] <- opt_weight
+      # 最优化过程中小于0 的特别小的值，直接变成0
+      round_0 <- replace(opt_weight, opt_weight < 0, 0)
+      opt_weights[[as.character(gamma)]][[name]] <- round_0
     }
   }
 
