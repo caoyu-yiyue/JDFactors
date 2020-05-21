@@ -152,3 +152,10 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
 
   return(opt_weights)
 }
+
+
+read_port_ret <- function(
+                          data_path = "data/processed/port_ret.Rds") {
+  #' @title 读取组合收益率list
+  return(readRDS(data_path))
+}
