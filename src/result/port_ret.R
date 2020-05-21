@@ -77,6 +77,6 @@ invest_result_main <- function() {
 }
 
 
-if (sys.nframe()) {
+if (sys.nframe() == 0) {
   invest_result_main()
 }
