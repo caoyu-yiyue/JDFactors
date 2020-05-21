@@ -1,6 +1,6 @@
 .PHONY: all prepare_data garch_model
 
-all: data/interim/facs_xts.Rds garch_model rolling_part
+all: data/interim/facs_xts.Rds garch_model rolling_part result
 
 clean:
 	trash data/interim/*.Rds
@@ -43,3 +43,9 @@ data/interim/rolling_mean.Rds: data/interim/facs_xts.Rds
 data/interim/opt_weights.Rds: data/interim/rolling_cop_rcov.Rds data/interim/fixed_cor2cov.Rds \
  data/interim/rolling_mean.Rds
 	Rscript --vanilla src/process/weight_optimize.R $@
+
+# ================================ inverst result =================================== #
+result: data/processed/port_ret.Rds
+
+data/processed/port_ret.Rds: data/interim/opt_weights.Rds
+	Rscript --vanilla src/result/port_ret.R $@
