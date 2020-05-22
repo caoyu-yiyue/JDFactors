@@ -2,11 +2,7 @@ suppressPackageStartupMessages({
   library(xts)
 })
 
-source("src/data/read_data.R")
 source("src/process/multi_garch_mdl.R")
-
-rolling_garch_list <- read_rolling_multigarchfit()
-rolling_garch_list <- readRDS("data/interim/rolling_multigarch.Rds")
 
 
 test_conv_cvar <- function(mgfit) {
@@ -18,7 +14,3 @@ test_conv_cvar <- function(mgfit) {
     return(FALSE)
   }
 }
-
-
-result <- sapply(rolling_garch_list, test_conv_cvar)
-which(!result)
