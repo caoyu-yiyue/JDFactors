@@ -28,7 +28,7 @@ data/processed/all_cops.Rds: data/interim/multi_garch_mdl.Rds
 rolling_part: data/interim/rolling_multigarch.Rds data/interim/rolling_cop_rcov.Rds \
 	data/interim/fixed_cor2cov.Rds data/interim/rolling_mean.Rds
 
-data/interim/rolling_multigarch.Rds: data/interim/facs_xts.Rds
+data/interim/rolling_multigarch.Rds: data/interim/facs_xts.Rds src/config.R
 	Rscript --vanilla src/process/rolling_multigarch.R $@
 
 data/interim/rolling_cop_rcov.Rds: data/interim/rolling_multigarch.Rds
