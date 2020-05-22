@@ -42,7 +42,7 @@ rolling_mean_main <- function() {
 
   # 滚动计算几何平均收益率，每列单独计算
   rolling_geom_mean <- rollapply(
-    data = data_for_use, width = list(seq(-52, -1)),
+    data = data_for_use, width = list(seq(-window_len, -1)),
     FUN = .geom_mean_return, by.column = TRUE
   )
   rolling_geom_mean_xts <- xts::as.xts(rolling_geom_mean)
