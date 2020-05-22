@@ -54,7 +54,7 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
         ugfit <- ugarchfit(
           spec = multigarch_spec@spec[[i]],
           data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-          solver = "hybrid", fit.control = list(scale = 10 * try_time)
+          solver = "hybrid", fit.control = list(scale = 10**try_time)
         )
 
         if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
@@ -63,16 +63,19 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
           break
         }
 
-        # 如果到了最后一次还没有成功，尝试solver：lbfgs
+        # 如果到了最后一次还没有成功，尝试solver：lbfgs 五次
         if (try_time == 5) {
-          ugfit <- ugarchfit(
-            spec = multigarch_spec@spec[[i]],
-            data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-            solver = "lbfgs"
-          )
-          if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
-            # 通过验证，被ugfit 放进multi garch fit 中
-            multi_garch_fit@fit[[i]] <- ugfit
+          for (lbfgs_try_time in 1:5) {
+            ugfit <- ugarchfit(
+              spec = multigarch_spec@spec[[i]],
+              data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
+              solver = "lbfgs", fit.control = list(scale = 10**lbfgs_try_time)
+            )
+            if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
+              # 通过验证，被ugfit 放进multi garch fit 中
+              multi_garch_fit@fit[[i]] <- ugfit
+              break
+            }
           }
         }
       }
