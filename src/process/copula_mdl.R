@@ -15,8 +15,9 @@ source("src/data/read_data.R")
 
 # uarch_spec 输入换成multigarch spec 对象
 fit_garch_copula <- function(multigarch_spec, copula_type, is_dcc,
-                             asymm = FALSE, fit = TRUE, fac_data = NULL,
-                             multigarch_fit = NULL, cluster = NULL) {
+                             dcc_order = c(1, 1), asymm = FALSE, fit = TRUE,
+                             fac_data = NULL, multigarch_fit = NULL,
+                             cluster = NULL) {
   #' @title 基于multigarch_spec 对象和一组数据，计算出一个copula fit 对象
   #'
   #' @param multigarch_spec 一个multigarch spec 对象，将传递给 cgarchspec(uspec)
@@ -40,7 +41,8 @@ fit_garch_copula <- function(multigarch_spec, copula_type, is_dcc,
     distribution.model = list(
       copula = copula_type, method = "ML",
       time.varying = is_dcc, transformation = "parametric"
-    )
+    ),
+    dccOrder = dcc_order
   )
 
   if (!fit) {
