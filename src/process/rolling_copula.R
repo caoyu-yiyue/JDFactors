@@ -129,6 +129,14 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
         fit.control = list(scale = 10 * try_time)
       )
 
+      # 如果拟合返回的不是cGARCHfit 对象，则不使用multigarchfit 对象再来一次
+      if (!is(current_fit, "cGARCHfit")) {
+        current_fit <- multisol_cgarchfit(
+          spec = pure_cgarch_spec, data = data[1:t, ],
+          fit = NULL, fit.control = list(scale = 10 * try_time)
+        )
+      }
+
       # 如果current_fit 对象类型为cGARCHfit，停止循环即可
       if (is(current_fit, "cGARCHfit")) {
         break
