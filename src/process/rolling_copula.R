@@ -180,6 +180,15 @@ rolling_cop_rcov_main <- function() {
   in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
   multigarchfit_list <- read_rolling_multigarchfit()
 
+  # 验证rolling garch 全部fit成功
+  source("test/rolling_garch_cvar_test.R")
+  conv_result <- sapply(multigarchfit_list, test_conv_cvar)
+  if (FALSE %in% conv_result) {
+    problem_idx <- which(!conv_result)
+    print(problem_idx)
+    stop("Not conv problem.")
+  }
+
   # 2. 指定cGARCHspec 部分
   arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
   multi_garch_spec <- all_facs_multigarch(
