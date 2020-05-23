@@ -102,9 +102,10 @@ rolling_opt <- function(data, gamma, n_fac = 5, sum_1 = TRUE) {
 
 roll_opt_main <- function() {
   #' @title 进行权重最优化的主函数
-  #' @details 函数将生成一个二级list 并保存到脚本输入的第一个参数中。
-  #' 一级key 为gamma：c(3, 8, 20, 50)；
-  #' 二级key 为cop_type: c("t_dcc", "norm_dcc", "t_static", "norm_static",
+  #' @details 函数将生成一个三级list 并保存到脚本输入的第一个参数中。
+  #' 一级key 为sum1/no_sum1：权重和是否为1
+  #' 二级key 为gamma：c(3, 8, 20, 50)；
+  #' 三级key 为cop_type: c("t_dcc", "norm_dcc", "t_static", "norm_static",
   #' "fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
 
   # 读取mean 数据
@@ -119,7 +120,7 @@ roll_opt_main <- function() {
 
   # 对每个rcov 循环，与mean 合并并最优化
   gammas <- c(3, 8, 20, 50)
-  opt_weights <- list()
+  opt_weights_result <- list()
   for (gamma in gammas) {
     for (name in rcov_names) {
       rcov_xts <- all_rcovs[[name]]
@@ -128,15 +129,23 @@ roll_opt_main <- function() {
         data = mean_rcov_merged, gamma = gamma,
         n_fac = n_fac, sum_1 = TRUE
       )
+      opt_weight_no_sum1 <- rolling_opt(
+        data = mean_rcov_merged, gamma = gamma,
+        n_fac = n_fac, sum_1 = FALSE
+      )
       # 最优化过程中小于0 的特别小的值，直接变成0
       round_0 <- replace(opt_weight, opt_weight < 0, 0)
-      opt_weights[[as.character(gamma)]][[name]] <- round_0
+      round_0_nosum1 <- replace(opt_weight_no_sum1, opt_weight < 0, 0)
+
+      # 加入到结果list 中
+      opt_weights_result[["sum1"]][[as.character(gamma)]][[name]] <- round_0
+      opt_weights_result[["no_sum1"]][[as.character(gamma)]][[name]] <- round_0_nosum1
     }
   }
 
   # 保存到输入的路径当中。
   cmd_args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(opt_weights, file = cmd_args[[1]])
+  saveRDS(opt_weights_result, file = cmd_args[[1]])
 }
 
 

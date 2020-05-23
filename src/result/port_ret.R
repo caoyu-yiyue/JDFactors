@@ -66,10 +66,16 @@ invest_result_main <- function() {
   facs_xts <- read_fac_xts()
   opt_weights <- read_opt_weights(which = "all")
 
-  port_rets_list <- rets_for_all_sigma(
-    opt_weights = opt_weights,
+  port_rets_sum1 <- rets_for_all_sigma(
+    opt_weights = opt_weights[["sum1"]],
     facs_ret = facs_xts
   )
+  port_rets_no_sum1 <- rets_for_all_sigma(
+    opt_weights = opt_weights[["no_sum1"]],
+    facs_ret = facs_xts
+  )
+
+  port_rets_list <- list(sum1 = port_rets_sum1, no_sum1 = port_rets_no_sum1)
 
   # 保存到输入的路径当中。
   cmd_args <- commandArgs(trailingOnly = TRUE)
