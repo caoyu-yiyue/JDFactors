@@ -130,11 +130,14 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
                              which) {
   #' @title 读取滚动最优化求得的权重值
   #' @param data_path str. 保存数据的路径
-  #' @param which two item charactor vector. 第一个元素指定生成数据时的gamma
-  #' one of c(3, 8, 20, 50)；第二个元素为生成数据时的copula type,
+  #' @param which three item charactor vector.
+  #' 第一个元素指定是否需要sum1，即one of c("sum1", "no_sum1")
+  #' 第二个元素指定生成数据时的gamma，one of c(3, 8, 20, 50)；
+  #' 第三个元素为生成数据时的copula type, 
   #' one of c("t_dcc", "norm_dcc", "t_static", "norm_static", "all")
   #' 指定需要返回哪种copula 模型计算的最优权重。
   #' 或者可以传入一个"all"，返回包含所有结果的整个list。
+  #' 另外，第三或二三个项目可以为空，将返回第二级或第一级的list。
   #' @return which == "all" 时，将返回包含四种copula 最优权重的list，每个都是xts 对象
   #' which 为其他时，返回该指定的copula 计算所得的权重。
 
@@ -143,7 +146,11 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
   opt_weights <- if (which[1] == "all") {
     rolling_cop_rcov_list
   } else {
-    rolling_cop_rcov_list[[which[1]]][[which[2]]]
+    result <- rolling_cop_rcov_list
+    for (i in which) {
+      result <- result[i]
+    }
+    result
   }
 
   if (is.null(opt_weights)) {
