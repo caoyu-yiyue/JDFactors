@@ -165,7 +165,7 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
   } else {
     result <- rolling_cop_rcov_list
     for (i in which) {
-      result <- result[i]
+      result <- result[[i]]
     }
     result
   }
