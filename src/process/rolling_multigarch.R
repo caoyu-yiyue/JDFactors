@@ -107,6 +107,15 @@ rolling_multigarch_main <- function() {
     start_t = in_sample_end, step_by = ROLLING_STEP
   )
 
+  # 验证rolling garch 全部fit成功
+  source("test/rolling_garch_cvar_test.R")
+  conv_result <- sapply(rolling_multigarch_fits, test_conv_cvar)
+  if (FALSE %in% conv_result) {
+    problem_idx <- which(!conv_result)
+    print(problem_idx)
+    stop("Not conv problem.")
+  }
+
   # 为list 添加名字，每个项目名字为该fit_time(实际是行数)。最后保存。
   args <- commandArgs(trailingOnly = TRUE)
   saveRDS(object = rolling_multigarch_fits, file = args[[1]])
