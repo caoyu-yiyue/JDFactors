@@ -14,6 +14,23 @@ read_fac_xts <- function(data_freq = "Week") {
 }
 
 
+read_rf_xts <- function(data_freq = "Week") {
+  #' @title 读取无风险收益率
+  #' @param data_freq 数据频度，one of c("Week", "Month", "Day", "Year", "all")
+  #' all 将返回所有的数据
+  #' @return xts 对象。data_freq == "all" 将返回四列；else 返回一列
+
+  all_rf_xts <- readRDS("data/interim/rf_xts.Rds")
+  rf_xts <- if (data_freq == "all") {
+    all_rf_xts
+  } else {
+    all_rf_xts[, paste0(data_freq, "_", "rf")]
+  }
+
+  return(rf_xts)
+}
+
+
 read_best_arma_order <- function(data_path =
                                    "data/interim/best_arma_ssdt_Week.Rds") {
   #' @title 读取最佳arma order 数据
@@ -133,7 +150,7 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
   #' @param which three item charactor vector.
   #' 第一个元素指定是否需要sum1，即one of c("sum1", "no_sum1")
   #' 第二个元素指定生成数据时的gamma，one of c(3, 8, 20, 50)；
-  #' 第三个元素为生成数据时的copula type, 
+  #' 第三个元素为生成数据时的copula type,
   #' one of c("t_dcc", "norm_dcc", "t_static", "norm_static", "all")
   #' 指定需要返回哪种copula 模型计算的最优权重。
   #' 或者可以传入一个"all"，返回包含所有结果的整个list。
