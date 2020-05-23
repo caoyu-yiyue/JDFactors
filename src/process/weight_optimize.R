@@ -78,8 +78,8 @@ rolling_opt <- function(data, gamma, n_fac = 5, sum_1 = TRUE) {
     bvec <- c(1, rep.int(0, n_fac))
     meq <- 1
   } else {
-    amat <- diag(n_fac)
-    bvec <- rep.int(0, n_fac)
+    amat <- cbind(diag(n_fac), -diag(n_fac)) # 大于0 小于1
+    bvec <- c(rep.int(0, n_fac), rep.int(-1, n_fac))
     meq <- 0
   }
 
@@ -139,7 +139,8 @@ roll_opt_main <- function() {
 
       # 加入到结果list 中
       opt_weights_result[["sum1"]][[as.character(gamma)]][[name]] <- round_0
-      opt_weights_result[["no_sum1"]][[as.character(gamma)]][[name]] <- round_0_nosum1
+      opt_weights_result[["no_sum1"]][[as.character(gamma)]][[name]] <-
+        round_0_nosum1
     }
   }
 
