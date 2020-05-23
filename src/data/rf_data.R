@@ -12,5 +12,5 @@ rf_df <- read.csv("data/raw/risk_free.csv",
 )
 
 rf_xts <- xts::as.xts(rf_df[, 2:ncol(rf_df)], order.by = as.Date(rf_df[, 1]))
-colnames(rf_xts) <- c("rf_data", "day", "week", "month")
+colnames(rf_xts) <- c("Year_rf", "Day_rf", "Week_rf", "Month_rf")
 saveRDS(rf_xts, "data/interim/rf_xts.Rds")
