@@ -78,8 +78,11 @@ rolling_opt <- function(data, gamma, n_fac = 5, sum_1 = TRUE) {
     bvec <- c(1, rep.int(0, n_fac))
     meq <- 1
   } else {
-    amat <- cbind(diag(n_fac), -diag(n_fac)) # 大于0 小于1
-    bvec <- c(rep.int(0, n_fac), rep.int(-1, n_fac))
+    amat <- cbind(
+      matrix(rep.int(-1, n_fac), nrow = n_fac), # 权重和小于等于1
+      diag(n_fac) # 每个权重大于等于0
+    )
+    bvec <- c(-1, rep.int(0, n_fac))
     meq <- 0
   }
 
@@ -129,10 +132,15 @@ roll_opt_main <- function() {
         data = mean_rcov_merged, gamma = gamma,
         n_fac = n_fac, sum_1 = TRUE
       )
+
+      # 没有sum(weights) == 1 限制条件（即 <= 1）
       opt_weight_no_sum1 <- rolling_opt(
         data = mean_rcov_merged, gamma = gamma,
         n_fac = n_fac, sum_1 = FALSE
       )
+      # 与1 相差的部分投资rf
+      opt_weight_no_sum1$rf <- 1 - rowSums(opt_weight_no_sum1)
+
       # 最优化过程中小于0 的特别小的值，直接变成0
       round_0 <- replace(opt_weight, opt_weight < 0, 0)
       round_0_nosum1 <- replace(opt_weight_no_sum1, opt_weight < 0, 0)

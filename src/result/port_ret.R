@@ -65,14 +65,19 @@ invest_result_main <- function() {
 
   facs_xts <- read_fac_xts()
   opt_weights <- read_opt_weights(which = "all")
+  rf_xts <- read_rf_xts(data_freq = "Week")
+  colnames(rf_xts) <- "rf"
 
   port_rets_sum1 <- rets_for_all_sigma(
     opt_weights = opt_weights[["sum1"]],
     facs_ret = facs_xts
   )
+
+  # 对于无全投资限制的方式，需要先合并rf 列
+  facs_merged_rf <- merge.xts(facs_xts, rf_xts, join = "left")
   port_rets_no_sum1 <- rets_for_all_sigma(
     opt_weights = opt_weights[["no_sum1"]],
-    facs_ret = facs_xts
+    facs_ret = facs_merged_rf
   )
 
   port_rets_list <- list(sum1 = port_rets_sum1, no_sum1 = port_rets_no_sum1)
