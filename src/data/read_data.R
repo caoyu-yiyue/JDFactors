@@ -56,6 +56,9 @@ read_all_cops <- function(data_path = "data/processed/all_cops.Rds") {
   return(all_cops)
 }
 
+################################################################################
+# 与rolling fit 相关的数据读取 部分
+################################################################################
 
 in_sample_yearend_row <- function(data, in_sample_year) {
   #' @title 针对数据的in_sample_year 的年数，找到in_sample 的最后一行行号
@@ -69,18 +72,21 @@ in_sample_yearend_row <- function(data, in_sample_year) {
 
 
 read_rolling_multigarchfit <-
-  function(data_path = "data/interim/rolling_multigarch.Rds") {
+  function(base_name = "data/interim/rolling_multigarch", data_freq = "Week",
+           extension = ".Rds") {
     #' @title 读取rolling mutiplegarch fit 对象的list
     #' @param data_path 保存数据的路径
     #' @return list of uGARCHmultifit，以拟合garch 时的数据行数为names
 
+    data_path <- paste0(base_name, "_", data_freq, extension)
     multigarch_list <- readRDS(data_path)
     return(multigarch_list)
   }
 
 
 read_rolling_cop_rcov <-
-  function(data_path = "data/interim/rolling_cop_rcov.Rds", which) {
+  function(which, base_name = "data/interim/rolling_cop_rcov",
+           data_freq = "Week", extension = ".Rds") {
     #' @title 读取rolling copula fit 得到的滚动一步预测方差-协方差矩阵(rcov)
     #'
     #' @param data_path str. 保存数据的路径
@@ -90,6 +96,7 @@ read_rolling_cop_rcov <-
     #' @return which == "all" 时，将返回包含四种copula rcov 的list，每个都是xts 对象
     #' which 为其他时，返回该指定的copula 生成的rcov。
 
+    data_path <- paste0(base_name, "_", data_freq, extension)
     rolling_cop_rcov_list <- readRDS(data_path)
     cop_rcov <- if (which == "all") {
       rolling_cop_rcov_list
@@ -108,7 +115,8 @@ read_rolling_cop_rcov <-
 
 
 read_fixed_cor_rcov <-
-  function(data_path = "data/interim/fixed_cor2cov.Rds", which) {
+  function(which, base_name = "data/interim/fixed_cor2cov",
+           data_freq = "Week", extension = ".Rds") {
     #' @title 读取使用样本内（外）cor matrix 得到的滚动一步预测方差-协方差矩阵(rcov)
     #'
     #' @param data_path str. 保存数据的路径
@@ -117,6 +125,7 @@ read_fixed_cor_rcov <-
     #' @return which == "all" 时，将返回包含样本内（外）cor 计算的两个rcov 的list，每个都是xts 对象
     #' which 为其他时，返回该指定的cor matrix 生成的rcov。
 
+    data_path <- paste0(base_name, "_", data_freq, extension)
     fixed_cor_gen_rcov_list <- readRDS(data_path)
     fixed_cor_rcov <- if (which == "all") {
       fixed_cor_gen_rcov_list
@@ -133,18 +142,20 @@ read_fixed_cor_rcov <-
   }
 
 
-read_rolling_mean <- function(data_path = "data/interim/rolling_mean.Rds") {
+read_rolling_mean <- function(base_name = "data/interim/rolling_mean.Rds",
+                              data_freq = "Week", extension = ".Rds") {
   #' @title 读取rolling mean(滚动几何平均值)的 xts 对象。
   #' @param 读取数据的路径
   #' @return xts. 即保存了rolling geom mean 的xts 对象
 
+  data_path <- paste0(base_name, "_", data_freq, extension)
   rolling_mean_xts <- readRDS(data_path)
   return(rolling_mean_xts)
 }
 
 
-read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
-                             which) {
+read_opt_weights <- function(which, base_name = "data/interim/opt_weights",
+                             data_freq = "Week", extension = ".Rds") {
   #' @title 读取滚动最优化求得的权重值
   #' @param data_path str. 保存数据的路径
   #' @param which three item charactor vector.
@@ -159,6 +170,7 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
   #' which 为其他时，返回该指定的copula 计算所得的权重。
 
 
+  data_path <- paste0(base_name, "_", data_freq, extension)
   rolling_cop_rcov_list <- readRDS(data_path)
   opt_weights <- if (which[1] == "all") {
     rolling_cop_rcov_list
@@ -178,8 +190,10 @@ read_opt_weights <- function(data_path = "data/interim/opt_weights.Rds",
 }
 
 
-read_port_ret <- function(
-                          data_path = "data/processed/port_ret.Rds") {
+read_port_ret <- function(base_name = "data/processed/port_ret",
+                          data_freq = "Week", extension = ".Rds") {
   #' @title 读取组合收益率list
+
+  data_path <- paste0(base_name, "_", data_freq, extension)
   return(readRDS(data_path))
 }
