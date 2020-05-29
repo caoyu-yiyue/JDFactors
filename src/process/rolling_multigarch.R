@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   library(foreach)
   library(parallel)
   library(doParallel)
+  library(optparse)
 })
 
 source("src/data/read_data.R")
@@ -94,9 +95,25 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
 rolling_multigarch_main <- function() {
   #' @title rolling 计算multigarch fit 的主函数，以此为基础来计算后面不同的copula 参数
 
+  # 解析命令行参数
+  option_list <- list(
+    make_option(
+      opt_str = "--data_freq", type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+
   # 读取数据，并找到起始行
-  facs_xts <- read_fac_xts()
-  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
+  facs_xts <- read_fac_xts(data_freq = opts[["data_freq"]])
+  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS["data_freq"])
 
   # 设定每次refit 共用的multigarch spec 对象
   arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
@@ -116,9 +133,8 @@ rolling_multigarch_main <- function() {
     stop("Not conv problem.")
   }
 
-  # 为list 添加名字，每个项目名字为该fit_time(实际是行数)。最后保存。
-  args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(object = rolling_multigarch_fits, file = args[[1]])
+  # 保存生成的对象。
+  saveRDS(object = rolling_multigarch_fits, file = opts[["out_put"]])
 }
 
 
