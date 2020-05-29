@@ -142,7 +142,7 @@ read_fixed_cor_rcov <-
   }
 
 
-read_rolling_mean <- function(base_name = "data/interim/rolling_mean.Rds",
+read_rolling_mean <- function(base_name = "data/interim/rolling_mean",
                               data_freq = "Week", extension = ".Rds") {
   #' @title 读取rolling mean(滚动几何平均值)的 xts 对象。
   #' @param 读取数据的路径
