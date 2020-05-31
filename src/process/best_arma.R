@@ -84,7 +84,7 @@ if (sys.nframe() == 0) {
   # 读取命令行输入
   option_list <- list(
     make_option(
-      opt_str = "--data_freq", type = "character",
+      opt_str = c("-f", "--data_freq"), type = "character",
       default = "Week", help = "Which data freq of factors?",
       metavar = "character"
     ),
