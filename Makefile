@@ -32,8 +32,8 @@ data_freq:= Week
 
 rolling_part: data/interim/rolling_multigarch_$(data_freq).Rds \
 	data/interim/rolling_cop_rcov_$(data_freq).Rds data/interim/fixed_cor2cov_$(data_freq).Rds \
-	data/interim/rolling_mean_$(data_freq).Rds data/interim/opt_weights.Rds_$(data_freq) \
-	data/processed/port_ret.Rds_$(data_freq)
+	data/interim/rolling_mean_$(data_freq).Rds data/interim/opt_weights_$(data_freq).Rds \
+	data/processed/port_ret_$(data_freq).Rds
 
 data/interim/rolling_multigarch_$(data_freq).Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_multigarch.R -f $(data_freq) -o $@
@@ -44,13 +44,13 @@ data/interim/rolling_cop_rcov_$(data_freq).Rds: data/interim/rolling_multigarch_
 data/interim/fixed_cor2cov_$(data_freq).Rds: data/interim/rolling_multigarch_$(data_freq).Rds
 	Rscript --vanilla src/process/fixed_cor2cov.R -f $(data_freq) -o $@
 
-data/interim/rolling_mean.Rds_$(data_freq): data/interim/facs_xts.Rds
+data/interim/rolling_mean_$(data_freq).Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_mean.R -f $(data_freq) -o $@
 
-data/interim/opt_weights.Rds_$(data_freq): data/interim/rolling_cop_rcov_$(data_freq).Rds \
+data/interim/opt_weights_$(data_freq).Rds: data/interim/rolling_cop_rcov_$(data_freq).Rds \
 	data/interim/fixed_cor2cov_$(data_freq).Rds data/interim/rolling_mean_$(data_freq).Rds
 	Rscript --vanilla src/process/weight_optimize.R -f $(data_freq) -o $@
 
 # ================================ inverst result =================================== #
-data/processed/port_ret.Rds_$(data_freq): data/interim/opt_weights_$(data_freq).Rds
+data/processed/port_ret_$(data_freq).Rds: data/interim/opt_weights_$(data_freq).Rds
 	Rscript --vanilla src/result/port_ret.R -f $(data_freq) -o $@
