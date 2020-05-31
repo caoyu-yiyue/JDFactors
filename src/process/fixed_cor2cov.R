@@ -166,12 +166,28 @@ fix_cor2cov_main <- function() {
   #' 每日cov matrix 的两个xts 对象。
   #' list name 为c("fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
 
+  option_list <- list(
+    make_option(
+      opt_str = c("-f", "--data_freq"), type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
+
   # 读取因子数据和multiGARCHfit 对象的list
-  facs_xts <- read_fac_xts()
-  multigarch_list <- read_rolling_multigarchfit()
+  facs_xts <- read_fac_xts(data_freq = data_freq)
+  multigarch_list <- read_rolling_multigarchfit(data_freq = data_freq)
   in_sample_end_row <- in_sample_yearend_row(
     data = facs_xts,
-    in_sample_year = IN_SAMPLE_YEARS
+    in_sample_year = IN_SAMPLE_YEARS[data_freq]
   )
 
   # 计算样本内与样本外的cor 即相关系数矩阵
@@ -197,8 +213,7 @@ fix_cor2cov_main <- function() {
   flat_covs_list[["static_benchmark"]] <- static_cov_xts
 
   # 保存到输入的路径当中。
-  cmd_args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(flat_covs_list, file = cmd_args[[1]])
+  saveRDS(flat_covs_list, file = opts[["out_put"]])
 }
 
 

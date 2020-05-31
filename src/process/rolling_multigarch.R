@@ -98,7 +98,7 @@ rolling_multigarch_main <- function() {
   # 解析命令行参数
   option_list <- list(
     make_option(
-      opt_str = "--data_freq", type = "character",
+      opt_str = c("-f", "--data_freq"), type = "character",
       default = "Week", help = "Which data freq of factors?",
       metavar = "character"
     ),

@@ -31,9 +31,25 @@ rolling_mean_main <- function() {
   #' @details 注意：每个日期计算它之前52 期（而不包含当期）的几何收益率。
   #' @return NULL 但将会保存一个xts 对象到命令行传入的第一个参数说明的路径中。
 
+  option_list <- list(
+    make_option(
+      opt_str = c("-f", "--data_freq"), type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
+
   # 读取数据，并且只使用rolling copula 时期的数据，避免多余计算
-  facs_xts <- read_fac_xts()
-  in_sapmle_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
+  facs_xts <- read_fac_xts(data_freq = data_freq)
+  in_sapmle_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
   window_len <- 52
   # 须转换为zoo 对象以使用rollapply。同时所需数据为in_sample_end - window_len 后 + 1
   data_for_use <- as.zoo(
@@ -48,8 +64,7 @@ rolling_mean_main <- function() {
   rolling_geom_mean_xts <- xts::as.xts(rolling_geom_mean)
 
   # 保存到输入的路径当中。
-  cmd_args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(rolling_geom_mean_xts, file = cmd_args[[1]])
+  saveRDS(rolling_geom_mean_xts, file = opts[["out_put"]])
 }
 
 

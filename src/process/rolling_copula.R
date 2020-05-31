@@ -183,10 +183,27 @@ rolling_cop_rcov_main <- function() {
   #' @details 将会分别计算一个t-cop_dcc, norm-cop_dcc, t-cop_static, norm-cop_static
   #' 所对应的rcov，最终保存在一个list 中。
 
+  # 解析命令行参数
+  option_list <- list(
+    make_option(
+      opt_str = c("-f", "--data_freq"), type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
+
   # 1. 读取必要数据
-  facs_xts <- read_fac_xts()
-  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
-  multigarchfit_list <- read_rolling_multigarchfit()
+  facs_xts <- read_fac_xts(data_freq = data_freq)
+  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
+  multigarchfit_list <- read_rolling_multigarchfit(data_freq = data_freq)
 
   # 2. 指定cGARCHspec 部分
   arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
@@ -257,8 +274,7 @@ rolling_cop_rcov_main <- function() {
     t_static = t_static_rcov, norm_static = norm_static_rcov
   )
 
-  cmd_args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(all_cop_rcov_list, cmd_args)
+  saveRDS(all_cop_rcov_list, opts[["out_put"]])
 }
 
 

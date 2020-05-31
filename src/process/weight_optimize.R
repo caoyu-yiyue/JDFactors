@@ -111,13 +111,29 @@ roll_opt_main <- function() {
   #' 三级key 为cop_type: c("t_dcc", "norm_dcc", "t_static", "norm_static",
   #' "fixed_cor.IN_SAM", "fixed_cor.OUT_SAM")
 
+  option_list <- list(
+    make_option(
+      opt_str = c("-f", "--data_freq"), type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
+
   # 读取mean 数据
-  rolling_mean <- read_rolling_mean()
+  rolling_mean <- read_rolling_mean(data_freq = data_freq)
   n_fac <- ncol(rolling_mean)
 
   # 读取保存所有rcov 的list
-  cop_rcovs <- read_rolling_cop_rcov(which = "all")
-  fixed_cor_rcovs <- read_fixed_cor_rcov(which = "all")
+  cop_rcovs <- read_rolling_cop_rcov(which = "all", data_freq = data_freq)
+  fixed_cor_rcovs <- read_fixed_cor_rcov(which = "all", data_freq = data_freq)
   all_rcovs <- append(cop_rcovs, fixed_cor_rcovs)
   rcov_names <- names(all_rcovs)
 
@@ -153,8 +169,7 @@ roll_opt_main <- function() {
   }
 
   # 保存到输入的路径当中。
-  cmd_args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(opt_weights_result, file = cmd_args[[1]])
+  saveRDS(opt_weights_result, file = opts[["out_put"]])
 }
 
 

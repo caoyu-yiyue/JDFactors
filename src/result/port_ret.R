@@ -63,9 +63,25 @@ invest_result_main <- function() {
   #' @title 计算投资策略的组合收益率结果的主函数
   #' @return NULL，但会将生成的不同sigma 下的各种策略收益率list 保存到传入的第一个参数的位置。
 
-  facs_xts <- read_fac_xts()
-  opt_weights <- read_opt_weights(which = "all")
-  rf_xts <- read_rf_xts(data_freq = "Week")
+  option_list <- list(
+    make_option(
+      opt_str = c("-f", "--data_freq"), type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
+
+  facs_xts <- read_fac_xts(data_freq = data_freq)
+  opt_weights <- read_opt_weights(which = "all", data_freq = data_freq)
+  rf_xts <- read_rf_xts(data_freq = data_freq)
   colnames(rf_xts) <- "rf"
 
   port_rets_sum1 <- rets_for_all_sigma(
@@ -83,8 +99,7 @@ invest_result_main <- function() {
   port_rets_list <- list(sum1 = port_rets_sum1, no_sum1 = port_rets_no_sum1)
 
   # 保存到输入的路径当中。
-  cmd_args <- commandArgs(trailingOnly = TRUE)
-  saveRDS(port_rets_list, file = cmd_args[[1]])
+  saveRDS(port_rets_list, file = opts[["out_put"]])
 }
 
 
