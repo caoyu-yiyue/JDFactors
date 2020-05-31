@@ -7,6 +7,7 @@
 
 suppressPackageStartupMessages({
   library(xts)
+  library(optparse)
 })
 
 source("src/data/read_data.R")

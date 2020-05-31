@@ -9,6 +9,7 @@ suppressPackageStartupMessages({
   library(xts)
   library(zoo)
   library(EnvStats)
+  library(optparse)
 })
 
 source("src/data/read_data.R")

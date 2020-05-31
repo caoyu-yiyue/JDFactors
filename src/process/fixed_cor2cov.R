@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(xts)
   library(rugarch)
   library(MBESS)
+  library(optparse)
 })
 
 source("src/data/read_data.R")

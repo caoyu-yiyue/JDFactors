@@ -8,6 +8,7 @@
 suppressPackageStartupMessages({
   library(xts)
   library(quadprog)
+  library(optparse)
 })
 
 source("src/data/read_data.R")

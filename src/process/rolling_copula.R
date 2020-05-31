@@ -11,6 +11,7 @@ suppressPackageStartupMessages({
   library(xts)
   library(foreach)
   library(doParallel)
+  library(optparse)
 })
 
 source("src/data/read_data.R")
