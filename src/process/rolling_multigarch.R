@@ -114,7 +114,7 @@ rolling_multigarch_main <- function() {
 
   # 读取数据，并找到起始行
   facs_xts <- read_fac_xts(data_freq = data_freq)
-  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
+  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
 
   # 设定每次refit 共用的multigarch spec 对象
   arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
@@ -122,7 +122,7 @@ rolling_multigarch_main <- function() {
 
   rolling_multigarch_fits <- rolling_multigarch_fit(
     data = facs_xts, multigarch_spec = multigarch_spec,
-    start_t = in_sample_end, step_by = ROLLING_STEP
+    start_t = in_sample_end, step_by = ROLLING_STEP[data_freq]
   )
 
   # 验证rolling garch 全部fit成功

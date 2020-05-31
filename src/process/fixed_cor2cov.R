@@ -187,7 +187,7 @@ fix_cor2cov_main <- function() {
   multigarch_list <- read_rolling_multigarchfit(data_freq = data_freq)
   in_sample_end_row <- in_sample_yearend_row(
     data = facs_xts,
-    in_sample_year = IN_SAMPLE_YEARS[data_freq]
+    in_sample_year = IN_SAMPLE_YEARS
   )
 
   # 计算样本内与样本外的cor 即相关系数矩阵
@@ -196,7 +196,7 @@ fix_cor2cov_main <- function() {
   forcasted_sigma_xts <- rolling_sigma_forcast(
     multi_garch_fit_list = multigarch_list,
     data = facs_xts,
-    step_by = ROLLING_STEP
+    step_by = ROLLING_STEP[data_freq]
   )
 
   # 对样本内与外的cor list 应用函数cors2covs，转换成flat cov xts 对象

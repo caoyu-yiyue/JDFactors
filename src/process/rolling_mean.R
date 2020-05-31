@@ -49,7 +49,7 @@ rolling_mean_main <- function() {
 
   # 读取数据，并且只使用rolling copula 时期的数据，避免多余计算
   facs_xts <- read_fac_xts(data_freq = data_freq)
-  in_sapmle_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
+  in_sapmle_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
   window_len <- 52
   # 须转换为zoo 对象以使用rollapply。同时所需数据为in_sample_end - window_len 后 + 1
   data_for_use <- as.zoo(
