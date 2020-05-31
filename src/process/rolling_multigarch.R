@@ -110,10 +110,11 @@ rolling_multigarch_main <- function() {
   )
   opt_parser <- optparse::OptionParser(option_list = option_list)
   opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
 
   # 读取数据，并找到起始行
-  facs_xts <- read_fac_xts(data_freq = opts[["data_freq"]])
-  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS["data_freq"])
+  facs_xts <- read_fac_xts(data_freq = data_freq)
+  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
 
   # 设定每次refit 共用的multigarch spec 对象
   arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
