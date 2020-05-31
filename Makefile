@@ -32,7 +32,8 @@ data_freq:= Week
 
 rolling_part: data/interim/rolling_multigarch_$(data_freq).Rds \
 	data/interim/rolling_cop_rcov_$(data_freq).Rds data/interim/fixed_cor2cov_$(data_freq).Rds \
-	data/interim/rolling_mean_$(data_freq).Rds data/processed/port_ret.Rds_$(data_freq)
+	data/interim/rolling_mean_$(data_freq).Rds data/interim/opt_weights.Rds_$(data_freq) \
+	data/processed/port_ret.Rds_$(data_freq)
 
 data/interim/rolling_multigarch_$(data_freq).Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_multigarch.R $@
