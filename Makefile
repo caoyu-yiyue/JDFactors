@@ -28,27 +28,28 @@ data/processed/all_cops.Rds: data/interim/multi_garch_mdl.Rds
 	Rscript --vanilla src/process/copula_mdl.R $@
 
 # ================================= rolling fit =================================== #
-rolling_part: data/interim/rolling_multigarch.Rds data/interim/rolling_cop_rcov.Rds \
-	data/interim/fixed_cor2cov.Rds data/interim/rolling_mean.Rds
+data_freq:= Week
 
-data/interim/rolling_multigarch.Rds: data/interim/facs_xts.Rds
+rolling_part: data/interim/rolling_multigarch_$(data_freq).Rds \
+	data/interim/rolling_cop_rcov_$(data_freq).Rds data/interim/fixed_cor2cov_$(data_freq).Rds \
+	data/interim/rolling_mean_$(data_freq).Rds data/processed/port_ret.Rds_$(data_freq)
+
+data/interim/rolling_multigarch_$(data_freq).Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_multigarch.R $@
 
-data/interim/rolling_cop_rcov.Rds: data/interim/rolling_multigarch.Rds
+data/interim/rolling_cop_rcov_$(data_freq).Rds: data/interim/rolling_multigarch_$(data_freq).Rds
 	Rscript --vanilla src/process/rolling_copula.R $@
 
-data/interim/fixed_cor2cov.Rds: data/interim/rolling_multigarch.Rds
+data/interim/fixed_cor2cov_$(data_freq).Rds: data/interim/rolling_multigarch_$(data_freq).Rds
 	Rscript --vanilla src/process/fixed_cor2cov.R $@
 
-data/interim/rolling_mean.Rds: data/interim/facs_xts.Rds
+data/interim/rolling_mean.Rds_$(data_freq): data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_mean.R $@
 
-data/interim/opt_weights.Rds: data/interim/rolling_cop_rcov.Rds data/interim/fixed_cor2cov.Rds \
- data/interim/rolling_mean.Rds
+data/interim/opt_weights.Rds_$(data_freq): data/interim/rolling_cop_rcov_$(data_freq).Rds \
+	data/interim/fixed_cor2cov_$(data_freq).Rds data/interim/rolling_mean_$(data_freq).Rds
 	Rscript --vanilla src/process/weight_optimize.R $@
 
 # ================================ inverst result =================================== #
-result: data/processed/port_ret.Rds
-
-data/processed/port_ret.Rds: data/interim/opt_weights.Rds
+data/processed/port_ret.Rds_$(data_freq): data/interim/opt_weights_$(data_freq).Rds
 	Rscript --vanilla src/result/port_ret.R $@
