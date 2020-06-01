@@ -122,21 +122,25 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
       current_fit <- multisol_cgarchfit(
         spec = pure_cgarch_spec, data = data[1:t, ],
         fit = fitted_multigarchfit,
-        fit.control = list(scale = 10 ** (try_time - 1))
+        fit.control = list(scale = 10**(try_time - 1))
       )
-
-      # 如果拟合返回的不是cGARCHfit 对象，则不使用multigarchfit 对象再来一次
-      if (!is(current_fit, "cGARCHfit")) {
-        current_fit <- multisol_cgarchfit(
-          spec = pure_cgarch_spec, data = data[1:t, ],
-          fit = NULL, fit.control = list(scale = 10 ** (try_time - 1))
-        )
-      }
 
       # 如果current_fit 对象类型为cGARCHfit，停止循环即可
       if (is(current_fit, "cGARCHfit")) {
         break
       }
+
+      # 如果第5 次还没有解决，则不使用multigarchfit 对象再来一次
+      if (try_time == 5) {
+        current_fit <- multisol_cgarchfit(
+          spec = pure_cgarch_spec, data = data[1:t, ],
+          fit = NULL, fit.control = list(scale = 10**(try_time - 1))
+        )
+      }
+    }
+
+    if (is.null(current_fit)) {
+      stop("Can't fit copula params!")
     }
 
     # 2. 设定fixed param 并filter 部分
