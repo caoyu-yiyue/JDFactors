@@ -186,10 +186,11 @@ fix_cor2cov_main <- function() {
   # 读取因子数据和multiGARCHfit 对象的list
   facs_xts <- read_fac_xts(data_freq = data_freq)
   multigarch_list <- read_rolling_multigarchfit(data_freq = data_freq)
-  in_sample_end_row <- in_sample_yearend_row(
-    data = facs_xts,
-    in_sample_year = IN_SAMPLE_YEARS[data_freq]
-  )
+  in_sample_end_row <- if (data_freq == "Month") {
+    IN_SAMPLE_YEARS[data_freq]
+  } else {
+    in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
+  }
 
   # 计算样本内与样本外的cor 即相关系数矩阵
   cors_list <- in_or_out_sample_cor(facs_xts, in_sample_end_row)
