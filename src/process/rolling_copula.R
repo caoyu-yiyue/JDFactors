@@ -203,7 +203,7 @@ rolling_cop_rcov_main <- function() {
 
   # 1. 读取必要数据
   facs_xts <- read_fac_xts(data_freq = data_freq)
-  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS)
+  in_sample_end <- in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
   multigarchfit_list <- read_rolling_multigarchfit(data_freq = data_freq)
 
   # 2. 指定cGARCHspec 部分

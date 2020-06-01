@@ -3,4 +3,4 @@
 #############################################################################
 
 ROLLING_STEP <- c(Week = 52, Day = 250, Month = 12)
-IN_SAMPLE_YEARS <- 5
+IN_SAMPLE_YEARS <- c(Week = 5, Day = 5, Month = 9)
