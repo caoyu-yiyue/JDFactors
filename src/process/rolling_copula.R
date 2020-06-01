@@ -91,8 +91,7 @@ multisol_cgarchfit <- function(spec, data, fit = NULL, ...) {
 
 
 rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
-                                start_row, step_by,
-                                multigarchfit_list = NULL) {
+                                step_by, multigarchfit_list) {
   #' @title 对data 根据pure_cgarch_spec, 从第start_row 开始，每step_by(12期) refit
   #' 一次，保持参数固定向前filter 12 期，然后重复rolling fit，最终输出所有的预测
   #' cov 矩阵。
@@ -100,7 +99,6 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
   #' @param data xts 对象，即多因子的xts 对象
   #' @param pure_cgarch_spec rmgarch::cgarchSpec。初始的cgarchSpec 对象。在这里
   #' 设定norm / t copula；static / dcc copula；以及指定固定参数
-  #' @param start_row int, default 296. 最初进行cgarchfit 所用的数据行数，即in sample data。
   #' @param step_by int. 每隔多久重新fit 模型。
   #' @param multigarchfit_list 保存multigarchfit 的list。
   #' 其fit 的日期必须与copula 模型保持一致，且name 为fit 所在的行数。
@@ -108,10 +106,7 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
 
   # 数据的总行数，以及需要refit 的行index 数。
   total_rows <- nrow(data)
-  fit_time <- seq.int(
-    from = start_row,
-    to = total_rows, by = step_by
-  )
+  fit_time <- as.numeric(names(multigarchfit_list))
 
   cls <- parallel::makeForkCluster(parallel::detectCores())
   doParallel::registerDoParallel(cls)
@@ -203,11 +198,6 @@ rolling_cop_rcov_main <- function() {
 
   # 1. 读取必要数据
   facs_xts <- read_fac_xts(data_freq = data_freq)
-  in_sample_end <- if (data_freq == "Month") {
-    IN_SAMPLE_YEARS[data_freq]
-  } else {
-    in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
-  }
   multigarchfit_list <- read_rolling_multigarchfit(data_freq = data_freq)
 
   # 2. 指定cGARCHspec 部分
@@ -227,7 +217,6 @@ rolling_cop_rcov_main <- function() {
   t_dcc_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
     pure_cgarch_spec = t_dcc_cgarch_spec,
-    start_row = in_sample_end,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
@@ -241,7 +230,6 @@ rolling_cop_rcov_main <- function() {
   norm_dcc_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
     pure_cgarch_spec = norm_dcc_cgarch_spec,
-    start_row = in_sample_end,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
@@ -255,7 +243,6 @@ rolling_cop_rcov_main <- function() {
   t_static_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
     pure_cgarch_spec = t_static_cgarch_spec,
-    start_row = in_sample_end,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
@@ -269,7 +256,6 @@ rolling_cop_rcov_main <- function() {
   norm_static_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
     pure_cgarch_spec = norm_static_cgarch_spec,
-    start_row = in_sample_end,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
