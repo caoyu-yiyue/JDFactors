@@ -2,6 +2,8 @@
 
 all: data/interim/facs_xts.Rds data/interim/rf_xts.Rds garch_model rolling_part
 
+all_verbose: all robust
+
 clean:
 	trash data/interim/*.Rds
 	trash data/processed/*.Rds
@@ -54,3 +56,6 @@ data/interim/opt_weights_$(data_freq).Rds: data/interim/rolling_cop_rcov_$(data_
 # ================================ inverst result =================================== #
 data/processed/port_ret_$(data_freq).Rds: data/interim/opt_weights_$(data_freq).Rds
 	Rscript --vanilla src/result/port_ret.R -f $(data_freq) -o $@
+
+robust:
+	$(MAKE) rolling_part data_freq=Day
