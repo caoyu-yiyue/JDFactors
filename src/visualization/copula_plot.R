@@ -31,6 +31,7 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
   plot_names <- colnames(rcor_list[[1]])
 
   par(mfrow = c(ceiling(n_plots / 3), 3), oma = c(0, 0, 1, 0), xpd = TRUE)
+  blank_polts <- prod(par()$mfrow) - n_plots
   # 对每个图形循环（实际上是对rcor xts 的每列的idx 循环
   for (plot_i in 1:n_plots) {
     # 使用第一个rcor xts 创建plot，同时指定xlab 和ylab
@@ -55,6 +56,12 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
     if (legend_txt == "default") {
       legend_txt <- names(dcc_cops)
     }
+
+    # 把然后去最后加图例空图跑完
+    for (i in seq_len(blank_polts)) {
+      plot.new()
+    }
+
     legend("bottomright",
       legend = legend_txt, col = colors,
       lty = ltys[seq_len(length(dcc_cops))], xpd = NA
@@ -63,4 +70,4 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
   par(mfrow = c(1, 1), oma = rep.int(0, 4), xpd = FALSE)
 }
 
-dcc_cop_cor_plot(cops_list, colors = c("green", "blue"))
+dcc_cop_cor_plot(cops_list, colors = c("green", "blue"), legend_txt = "default")
