@@ -30,7 +30,6 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
   idx <- index(rcor_list[[1]])
   plot_names <- colnames(rcor_list[[1]])
 
-  old_par <- par()
   par(mfrow = c(ceiling(n_plots / 3), 3), oma = c(0, 0, 1, 0), xpd = TRUE)
   # 对每个图形循环（实际上是对rcor xts 的每列的idx 循环
   for (plot_i in 1:n_plots) {
@@ -49,7 +48,7 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
     }
     title(main = plot_names[plot_i], adj = 0, line = 0.8)
   }
-  
+
   # 加总标题和图例
   mtext(main_title, side = 3, outer = TRUE, line = -1.5)
   if (!is.null(legend_txt)) {
@@ -58,10 +57,10 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
     }
     legend("bottomright",
       legend = legend_txt, col = colors,
-      lty = ltys[1:length(dcc_cops)], xpd = NA
+      lty = ltys[seq_len(length(dcc_cops))], xpd = NA
     )
   }
-  par(old_par)
+  par(mfrow = c(1, 1), oma = rep.int(0, 4), xpd = FALSE)
 }
 
 dcc_cop_cor_plot(cops_list, colors = c("green", "blue"))
