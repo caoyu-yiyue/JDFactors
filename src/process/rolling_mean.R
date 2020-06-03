@@ -55,7 +55,7 @@ rolling_mean_main <- function() {
   } else {
     in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
   }
-  window_len <- 52
+  window_len <- switch(data_freq, "Week" = 52, "Day" = 252, "Month" = 12)
   # 须转换为zoo 对象以使用rollapply。同时所需数据为in_sample_end - window_len 后 + 1
   data_for_use <- as.zoo(
     facs_xts[(in_sample_end - window_len + 1):nrow(facs_xts), ]
