@@ -49,7 +49,7 @@ utility_value <- function(portfolio_ret, risk_coef) {
 
 
 single_strategy_turnover <- function(strategy_name, port_ret_xts,
-                                     weights_list, facs_xts) {
+                                     weights_list, facs_xts, rf_xts = NULL) {
   #' @title 计算某一个策略的平均turnover（换手率）
   #'
   #' @param strategy_name charactor, 策略名。one of c("t_dcc", "norm_dcc",
@@ -65,6 +65,9 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
   fac_num <- ncol(facs_xts)
   port_ret <- port_ret_xts[, strategy_name]
   weights_xts <- weights_list[[strategy_name]]
+
+  # 如果rf_xts 不是NULL，那么将其合并到facs_xts 中
+  facs_xts <- merge.xts(facs_xts, rf_xts, join = "left")
 
   # 每一列都除以1 加 port_ret
   end_weights <- sweep(weights_xts * (1 + facs_xts), 1,
@@ -82,7 +85,8 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
 
 
 result_table_main <-
-  function(port_ret_list, weights_list, facs_xts, data_freq = "Week",
+  function(port_ret_list, weights_list, facs_xts, rf_xts = NULL,
+           data_freq = "Week",
            statistic_names = c("ME", "VOL", "SK", "KU", "SR", "U", "TO"),
            strategy_names = NULL) {
     #' @title 计算组合收益率统计表的主函数，将不同的计算结合在一起，再将不同的gamma 值的表合并为list
@@ -91,6 +95,8 @@ result_table_main <-
     #' 每个项目为策略收益的xts 对象，每列为策略名，每行为时间。
     #' @param weights_list list. 为二级list，一级名gamma，二级名为策略名。每个项目为因子权重xts，
     #' 每列为因子名，每行为时间。
+    #' @param facs_xts xts 对象。因子收益的xts 对象。
+    #' @param rf_xts xts 对象。无风险收益xts 对象。
     #' @param data_freq charactor. 因子数据的频率。默认为"Week"，用于计算年化利率时确定scale
     #' @param statistic_names charactor. 用于单独指定统计量的名字。
     #' @param strategy_names 策略名字，默认为NULL。如果是NULL 时将使用之前代码内部的名字。
@@ -127,7 +133,7 @@ result_table_main <-
       turnovers <- sapply(strategies_vec,
         FUN = single_strategy_turnover,
         port_ret_xts = port_ret_xts, weights_list = single_gamma_weights_list,
-        facs_xts = facs_xts
+        facs_xts = facs_xts, rf_xts = rf_xts
       )
 
       # 合并几种统计结果，根据传入参数进行结果的重命名
