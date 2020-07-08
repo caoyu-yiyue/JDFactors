@@ -31,10 +31,17 @@ read_rf_xts <- function(data_freq = "Week") {
 }
 
 
-read_best_arma_order <- function(data_path =
-                                   "data/interim/best_arma_ssdt_Week.Rds") {
+read_best_arma_order <- function(which) {
   #' @title 读取最佳arma order 数据
   #' @return 返回一个matrix, 保存每个因子的最佳arma order。
+  #'
+  if (which == "origin") {
+    data_path <- "data/interim/best_arma_ssdt_Week.Rds"
+  } else if (which == "adjusted") {
+    data_path <- "data/interim/best_arma_adjusted.Rds"
+  } else {
+    stop("Wrong parameter 'which', must one of 'origin' and 'adjusted'.")
+  }
   best_arma_order <- readRDS(data_path)
   return(best_arma_order)
 }
