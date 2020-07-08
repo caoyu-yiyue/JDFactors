@@ -89,7 +89,7 @@ multi_garch_fit_main <- function() {
   #'
   #' @return rugarch::uGARCHmultifit 即数据没列进行fit 之后的multifit
 
-  best_arma <- read_best_arma_order()
+  best_arma <- read_best_arma_order(which = "adjusted")
   facs_xts <- read_fac_xts()
   multi_fit_obj <- all_facs_multigarch(
     arma_order_df = best_arma,

@@ -64,7 +64,7 @@ copula_all_main <- function() {
   #' @return 集合了所有copula 的list
 
   multigarch_fit <- read_multi_garch_fit()
-  best_arma_order <- read_best_arma_order()
+  best_arma_order <- read_best_arma_order(which = "adjusted")
   facs_xts <- read_fac_xts()
 
   multi_garch_spec <- all_facs_multigarch(
