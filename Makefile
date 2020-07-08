@@ -23,7 +23,10 @@ garch_model: data/interim/best_arma_ssdt_Week.Rds data/interim/multi_garch_mdl.R
 data/interim/best_arma_ssdt_Week.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/best_arma.R --data_freq "Week" -o $@
 
-data/interim/multi_garch_mdl.Rds: data/interim/best_arma_ssdt_Week.Rds
+data/interim/best_arma_adjusted.Rds: data/interim/best_arma_ssdt_Week.Rds
+	Rscript --vanilla src/process/adjust_arma.R
+
+data/interim/multi_garch_mdl.Rds: data/interim/best_arma_adjusted.Rds
 	Rscript --vanilla src/process/multi_garch_mdl.R $@
 
 data/processed/all_cops.Rds: data/interim/multi_garch_mdl.Rds
