@@ -101,5 +101,5 @@ plot_qdc_all <- function(facs_xts) {
   # 对因子列的index 配对应用以上画图函数，画出图形
   par(mfrow = c(3, 4))
   apply(col_num_pairs, 1, .plot_for_one_data_pair)
-  par(mfrow = 1)
+  par(mfrow = c(1, 1))
 }
