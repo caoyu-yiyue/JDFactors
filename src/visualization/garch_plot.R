@@ -54,6 +54,47 @@ plot_multi_garch <- function(garch_fits_list, which_, fac_names, main_title) {
 }
 
 
+.cop_implied_qdc <- function(data_pair, cop_type) {
+  #' @title 计算一个copula 隐含的quantile dependence coeﬃcient 序列
+  #'
+  #' @param data_pair xts 对象，一个两列数据组成的数据对儿，必须是经过PIT 转换的数据
+  #' @param cop_type str one of c("normal", "t")。指定copula 的类型，这里支持normal 和t
+  #' @return numeric 计算过后的qdc 值。
+  #' @details 这里使用传入的数据估计一个copula。
+  #' 对于估计的t-copula，df 四舍五入为整数后再计算pCopula 的值。
+
+  # 拟合一个copula
+  cop <- ellipCopula(family = cop_type, dim = 2, dispstr = "un")
+  cop_fit <- fitCopula(copula = cop, data = as.matrix(data_pair), method = "ml")
+  # 解析参数rho 和df（df 需要约为整数），df 需要在cop_type 为t 时使用
+  rho <- coef(cop_fit)[1]
+  df <- if (cop_type == "t") {
+    round(coef(cop_fit)[2])
+  }
+
+  # 使用估计的参数新建一个copula 对象，df 参数依然是cop_type 为t 时指定。
+  cop_paramed <- ellipCopula(
+    family = cop_type, dim = 2, dispstr = "un", param = rho,
+    df = if (cop_type == "t") {
+      df
+    }
+  )
+
+  # 计算左侧的qdc 和右侧的qdc，合并到一起并输出
+  left_x <- seq(from = 0.05, to = 0.5, by = 0.01)
+  left_mat <- cbind(left_x, left_x)
+  left_y <- pCopula(u = left_mat, copula = cop_paramed) / left_x
+
+  right_x <- seq(from = 0.51, to = 0.95, by = 0.01)
+  right_mat <- cbind(right_x, right_x)
+  right_y <- (1 - 2 * right_x + pCopula(u = right_mat, copula = cop_paramed)) /
+    (1 - right_x)
+
+  qdc <- c(left_y, right_y)
+  return(qdc)
+}
+
+
 plot_qdc_all <- function(multigarch_fit_list) {
   #' @title 画全部数据对儿的quantile dependece coefficent 图形
   #' @param multigarch_fit_list list of ugarchfit. 保存GARCH 模型拟合结果的list。
@@ -80,11 +121,15 @@ plot_qdc_all <- function(multigarch_fit_list) {
       .quant_depend_coef_emp,
       data_pair = data_pair
     )
+    norm_cop_qdc <- .cop_implied_qdc(data_pair = data_pair, cop_type = "normal")
+    t_cop_qdc <- .cop_implied_qdc(data_pair = data_pair, cop_type = "t")
     # #### 可以在这里继续计算更多的y，然后画到图里 #### #
 
     # 开始画图
-    plot(quantile_x_vec, coef_y_vec_emp,
-      type = "l",
+    matplot(
+      x = quantile_x_vec, y = cbind(coef_y_vec_emp, norm_cop_qdc, t_cop_qdc),
+      type = c("l", "l", "l"),
+      lty = c(1, 4, 5),
       xlab = "Quantile", ylab = "Quantile Dependence"
     )
     # 画0.5 处的竖线
@@ -100,7 +145,7 @@ plot_qdc_all <- function(multigarch_fit_list) {
   # ========================================================================= #
 
   # 对因子列的index 配对应用以上画图函数，画出图形
-  par(mfrow = c(3, 4))
+  par(mfrow = c(4, 3))
   apply(col_num_pairs, 1, .plot_for_one_data_pair)
   par(mfrow = c(1, 1))
 }
