@@ -145,7 +145,22 @@ plot_qdc_all <- function(multigarch_fit_list, facs_names) {
   # ========================================================================= #
 
   # 对因子列的index 配对应用以上画图函数，画出图形
-  par(mfrow = c(4, 3))
+  # 首先规定layout，其中最下方为legend 留一整行（四个13）
+  layout_mat <- matrix(c(1:12, 13, 13, 13, 13),
+    nrow = 4, ncol = 4, byrow = TRUE
+  )
+  layout(mat = layout_mat, heights = c(rep(0.3, 3), 0.1))
   apply(col_num_pairs, 1, .plot_for_one_data_pair)
-  par(mfrow = c(1, 1))
+
+  # 跳过空图
+  par(mar = c(0.5, 0, 0, 0)) # 这里是规定图片的margin，防止legend 出界
+  for (i in 1:3) {
+    plot.new()
+  }
+  legend("center",
+    inset = 0,
+    legend = c("Data", "norm-Copula", "t-Copula"),
+    lty = c(1, 4, 5), col = 1:3, xpd = NA, horiz = TRUE,
+  )
+  par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
 }
