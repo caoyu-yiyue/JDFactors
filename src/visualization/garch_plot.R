@@ -40,7 +40,7 @@ plot_multi_garch <- function(garch_fits_list, which_, fac_names, main_title) {
   #' @return quantile dependece coefficent 数值
 
   # 对于小于0.5 的，为二者都小于quantile 的个数，除以其中一个（第二个）小于的个数
-  if (quantile_x <= 0.5) {
+  if (quantile_x < 0.5) {
     denominator <- nrow(data_pair[data_pair[, 2] <= quantile_x])
     molecule <- nrow(data_pair[data_pair[, 1] <= quantile_x &
       data_pair[, 2] <= quantile_x])
@@ -101,7 +101,6 @@ plot_qdc_all <- function(multigarch_fit_list) {
 
   # 将数据转换为均匀分布
   facs_unif <- do.call(cbind, lapply(multigarch_fit_list, pit))
-  # facs_unif <- copula::pobs(facs_xts)
   # 将所有的因子两两配对，形成组合。这里是对col index 进行组合以保证图片顺序。
   fac_nums <- ncol(facs_unif)
   col_num_pairs <- gtools::combinations(fac_nums, 2, seq_len(fac_nums))
