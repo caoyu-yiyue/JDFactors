@@ -95,12 +95,13 @@ plot_multi_garch <- function(garch_fits_list, which_, fac_names, main_title) {
 }
 
 
-plot_qdc_all <- function(multigarch_fit_list) {
+plot_qdc_all <- function(multigarch_fit_list, facs_names) {
   #' @title 画全部数据对儿的quantile dependece coefficent 图形
   #' @param multigarch_fit_list list of ugarchfit. 保存GARCH 模型拟合结果的list。
 
   # 将数据转换为均匀分布
   facs_unif <- do.call(cbind, lapply(multigarch_fit_list, pit))
+  colnames(facs_unif) <- facs_names
   # 将所有的因子两两配对，形成组合。这里是对col index 进行组合以保证图片顺序。
   fac_nums <- ncol(facs_unif)
   col_num_pairs <- gtools::combinations(fac_nums, 2, seq_len(fac_nums))
