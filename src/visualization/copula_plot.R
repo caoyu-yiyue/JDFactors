@@ -3,12 +3,6 @@ suppressPackageStartupMessages({
   library(rmgarch)
 })
 
-source("src/data/read_data.R")
-
-# 读取cgarchfit 对象
-full_cops <- read_all_cops()
-cops_list <- full_cops[c("dcc_t", "dcc_norm")]
-
 
 dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
                              main_title = "Corrs for Copulas",
@@ -69,5 +63,3 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
   }
   par(mfrow = c(1, 1), oma = rep.int(0, 4), xpd = FALSE)
 }
-
-dcc_cop_cor_plot(cops_list, colors = c("green", "blue"), legend_txt = "default")
