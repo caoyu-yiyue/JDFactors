@@ -19,13 +19,17 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
   #' @return NULL 但是会在默认dev 中输出图形
 
   # 对传入的dcc_cops list 求rcor。根据第一个rcor 找到图数、index、图名序列
+  cops_num <- length(dcc_cops)
   rcor_list <- lapply(dcc_cops, rcor, output = "matrix")
   n_plots <- ncol(rcor_list[[1]])
   idx <- index(rcor_list[[1]])
   plot_names <- colnames(rcor_list[[1]])
 
-  par(mfrow = c(ceiling(n_plots / 3), 3), oma = c(0, 0, 1, 0), xpd = TRUE)
-  blank_polts <- prod(par()$mfrow) - n_plots
+  layout_mat <- matrix(c(1:12, 13, 13, 13, 13),
+    nrow = 4, ncol = 4, byrow = TRUE
+  )
+  layout(mat = layout_mat, heights = c(rep(0.3, 3), 0.1))
+  blank_polts <- length(unique(as.numeric(layout_mat))) - n_plots
   # 对每个图形循环（实际上是对rcor xts 的每列的idx 循环
   for (plot_i in 1:n_plots) {
     # 使用第一个rcor xts 创建plot，同时指定xlab 和ylab
@@ -35,11 +39,13 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
     )
 
     # 对第2 到后面的rcor 们，使用lines 函数直接添加到上面的plot 上
-    for (mat_i in 2:length(rcor_list)) {
-      lines(
-        x = idx, y = rcor_list[[mat_i]][, plot_i],
-        col = colors[mat_i], lty = ltys[mat_i]
-      )
+    if (cops_num > 1) {
+      for (mat_i in 2:length(rcor_list)) {
+        lines(
+          x = idx, y = rcor_list[[mat_i]][, plot_i],
+          col = colors[mat_i], lty = ltys[mat_i]
+        )
+      }
     }
     title(main = plot_names[plot_i], adj = 0, line = 0.8)
   }
@@ -52,14 +58,16 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
     }
 
     # 把然后去最后加图例空图跑完
+    par(mar = c(0.5, 0, 0, 0)) # 这里是规定图片的margin，防止legend 出界
     for (i in seq_len(blank_polts)) {
       plot.new()
     }
 
-    legend("bottomright",
+    legend("center",
       legend = legend_txt, col = colors,
-      lty = ltys[seq_len(length(dcc_cops))], xpd = NA
+      lty = ltys[seq_len(length(dcc_cops))], xpd = NA,
+      horiz = TRUE
     )
   }
-  par(mfrow = c(1, 1), oma = rep.int(0, 4), xpd = FALSE)
+  par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
 }
