@@ -141,10 +141,10 @@ roll_opt_main <- function() {
   # 对每个rcov 循环，与mean 合并并最优化
   gammas <- c(3, 8, 20, 50)
   opt_weights_result <- list()
-  for (gamma in gammas) {
-    for (name in rcov_names) {
-      rcov_xts <- all_rcovs[[name]]
-      mean_rcov_merged <- cbind(rolling_mean, rcov_xts)
+  for (name in rcov_names) {
+    rcov_xts <- all_rcovs[[name]]
+    mean_rcov_merged <- cbind(rolling_mean, rcov_xts)
+    for (gamma in gammas) {
       opt_weight <- rolling_opt(
         data = mean_rcov_merged, gamma = gamma,
         n_fac = n_fac, sum_1 = TRUE
