@@ -1,8 +1,6 @@
-suppressPackageStartupMessages({
-  library(xts)
-  library(rmgarch)
-})
-
+################################################################################
+# 针对rmgarch::cGARCHfit 对象的部分绘图函数
+################################################################################
 
 dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
                              main_title = "Corrs for Copulas",
