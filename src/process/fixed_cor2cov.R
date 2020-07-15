@@ -102,6 +102,13 @@ rolling_sigma_forcast <- function(multi_garch_fit_list, data, step_by) {
 }
 
 
+.cor2flat_cov <- function(sigma_vec, cor_mat) {
+  cov_mat <- MBESS::cor2cov(cor.mat = cor_mat, sd = sigma_vec)
+  flat_cov_vec <- cov_mat[lower.tri(cov_mat, diag = TRUE)]
+  return(flat_cov_vec)
+}
+
+
 cors2covs <- function(cor_mat, sigma_xts) {
   #' @title 根据固定的相关系数矩阵cor_mat，以及每天的sd(这里是sigma_xts)，计算出每天展平的方差-协方差向量
   #' @param cor_mat 一个固定的相关系数矩阵
@@ -111,16 +118,9 @@ cors2covs <- function(cor_mat, sigma_xts) {
   #' 这是使用lower.tri 得到的对称矩阵的向量
   #' @return xts 对象。保存了每日的方差-协方差向量，排列方式如details 所述
 
-  # 定义针对一行sigma 进行cor2cov 变换的函数
-  .single_row_cor2cov <- function(sigma_vec, cor_mat) {
-    cov_mat <- MBESS::cor2cov(cor.mat = cor_mat, sd = sigma_vec)
-    flat_cov_vec <- cov_mat[lower.tri(cov_mat, diag = TRUE)]
-    return(flat_cov_vec)
-  }
-
-  # 将上面的函数应用到sigma_xts 的每一行上，结果需要转置，并且重新设置xts 对象
+  # 将cor2flat_cov 函数应用到sigma_xts 的每一行上，结果需要转置，并且重新设置xts 对象
   # 直接对apply 的结果转置再生成xts 将导致index 带上时区，以后很难对齐数据
-  covs_mat <- apply(sigma_xts, 1, FUN = .single_row_cor2cov, cor_mat = cor_mat)
+  covs_mat <- apply(sigma_xts, 1, FUN = .cor2flat_cov, cor_mat = cor_mat)
   covs_xts <- as.xts(t(covs_mat), order.by = as.Date(colnames(covs_mat)))
 
   fac_names <- colnames(sigma_xts)
@@ -132,6 +132,66 @@ cors2covs <- function(cor_mat, sigma_xts) {
 }
 
 
+################################################################################
+# 对于滚动的cor，结合预测的sigma 计算cov xts
+################################################################################
+rolling_flat_cor <- function(facs_xts, in_sample_end_row, width) {
+  #' @title 对于一个xts 数据，滚动计算其之前width 期的cor
+  #'
+  #' @param facs_xts xts 对象（或zoo 对象）。需要滚动计算的数据。
+  #' @param width 每期的滚动窗口长度。这里是指不包含本期的前width 期。
+  #' @return xts 对象。展平的cor 时间序列。使用copula::P2p 进行cor matrix 展平
+
+  # 计算某个数据框flat cor 的函数
+  .cor_flat <- function(facs_df) {
+    cor_mat <- cor(facs_df)
+    cor_flat <- copula::P2p(cor_mat)
+    return(cor_flat)
+  }
+
+  # 须转换为zoo 对象以使用rollapply。同时所需数据为in_sample_end_row - width 后 + 1
+  data_for_use <- as.zoo(
+    facs_xts[(in_sample_end_row - width + 1):nrow(facs_xts), ]
+  )
+  rolling_flat_cor <- zoo::rollapply(
+    data = data_for_use, width = list(seq(-width, -1)),
+    FUN = .cor_flat, by.column = FALSE
+  )
+  # 转换为xts 对象并返回
+  flat_cors_xts <- as.xts(rolling_flat_cor)
+  return(flat_cors_xts)
+}
+
+
+rolling_cors2covs <- function(flat_cors_xts, sigma_xts) {
+  #' @title 针对滚动的cors——即cors 时间序列——结合sigma 时间序列，计算每个时刻的cov
+  #'
+  #' @param flat_cors_xts xts 对象。使用copula::P2p() 展平的cors 时间序列。
+  #' @param sigma_xts xts 对象。每个时点的sigma，即sd（标准差）时间序列。
+  #' @details 最终的返回数据将与flat_cors_xts 的时间一致。sigma_xts 可以带有更长的时间区间，
+  #' 但不能比flat_cors_xts 更短，至少要满足每个flat_cors_xts 时间有一个sigma 向量。
+  #' @return xts 对象。flat covs，时间index 与flat_cors_xts 相同。
+
+  cor_and_cov <- merge.xts(flat_cors_xts, sigma_xts, join = "left")
+
+  flat_covs <- apply(cor_and_cov, 1, FUN = function(cor_cov_row) {
+    cor_mat <- copula::p2P(cor_cov_row[1:10])
+    sigmas <- cor_cov_row[11:15]
+    flat_cov <- .cor2flat_cov(sigma_vec = sigmas, cor_mat = cor_mat)
+    return(flat_cov)
+  })
+
+  # 将最终的covs 转换为xts 对象，同时为列命名
+  rolling_cors2covs <- as.xts(t(flat_covs),
+    order.by = as.Date(colnames(flat_covs))
+  )
+  colnames(rolling_cors2covs) <- .make_flat_cov_names(colnames(sigma_xts))
+  return(rolling_cors2covs)
+}
+
+################################################################################
+# 直接计算样本内的cov
+################################################################################
 static_in_sam_cov <- function(data, in_sample_end_row) {
   #' @title 计算样本期内的cov，展平并填充到样本外的每一期，作为benchmark 使用
   #'
@@ -207,7 +267,19 @@ fix_cor2cov_main <- function() {
     sigma_xts = forcasted_sigma_xts
   )
 
-  # 计算静态的in sample cov，并加入到结果list 中
+  # 2. 使用rolling cor 计算的cov
+  rolling_flat_cors <- rolling_flat_cor(
+    facs_xts = facs_xts,
+    in_sample_end_row = in_sample_end_row,
+    width = ROLLING_STEP[data_freq]
+  )
+  covs_from_rolling_cors <- rolling_cors2covs(
+    flat_cors_xts = rolling_flat_cors,
+    sigma_xts = forcasted_sigma_xts
+  )
+  flat_covs_list[["sample"]] <- covs_from_rolling_cors
+
+  # 3. 计算静态的in sample cov，并加入到结果list 中
   static_cov_xts <- static_in_sam_cov(
     data = facs_xts,
     in_sample_end_row = in_sample_end_row
