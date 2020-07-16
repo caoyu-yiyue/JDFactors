@@ -18,7 +18,7 @@ data/interim/rf_xts.Rds:
 
 # ================================= garch model =================================== #
 garch_model: data/interim/best_arma_ssdt_Week.Rds data/interim/multi_garch_mdl.Rds \
-	data/processed/all_cops.Rds data/interim/opt_weights.Rds
+	data/processed/all_cops.Rds
 
 data/interim/best_arma_ssdt_Week.Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/best_arma.R --data_freq "Week" -o $@
