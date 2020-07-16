@@ -57,7 +57,8 @@ data/interim/opt_weights_$(data_freq).Rds: data/interim/rolling_cop_rcov_$(data_
 	Rscript --vanilla src/process/weight_optimize.R -f $(data_freq) -o $@
 
 # ================================ inverst result =================================== #
-data/processed/port_ret_$(data_freq).Rds: data/interim/opt_weights_$(data_freq).Rds
+data/processed/port_ret_$(data_freq).Rds: data/interim/opt_weights_$(data_freq).Rds \
+	data/interim/rf_xts.Rds
 	Rscript --vanilla src/result/port_ret.R -f $(data_freq) -o $@
 
 robust:
