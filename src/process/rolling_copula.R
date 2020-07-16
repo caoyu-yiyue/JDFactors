@@ -205,9 +205,10 @@ rolling_cop_rcov_main <- function() {
   multigarchfit_list <- read_rolling_multigarchfit(data_freq = data_freq)
 
   # 2. 指定cGARCHspec 部分
-  arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
+  # arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
   multi_garch_spec <- all_facs_multigarch(
-    arma_order_df = arma_order_for_roll,
+    arma_order_df = ROLLING_ARMA_ORDERS,
+    garch_order_df = ROLLING_GARCH_ORDERS,
     fit = FALSE
   )
 

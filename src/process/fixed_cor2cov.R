@@ -46,9 +46,10 @@ static_cop_cor <- function(data, in_sample_end_row, in_sam_multigarch_fit) {
   #' @return list of 2 matrix. 包含了使用样本内外数据fit 的静态copula
   #' 导出的cor matrix。
 
-  arma_order_mat <- matrix(rep(3, 10), nrow = 2)
+  # arma_order_mat <- matrix(rep(3, 10), nrow = 2)
   multi_garch_spec <- all_facs_multigarch(
-    arma_order_df = arma_order_mat,
+    arma_order_df = ROLLING_ARMA_ORDERS,
+    garch_order_df = ROLLING_GARCH_ORDERS,
     fit = FALSE
   )
 

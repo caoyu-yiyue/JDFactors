@@ -121,8 +121,12 @@ rolling_multigarch_main <- function() {
   }
 
   # 设定每次refit 共用的multigarch spec 对象
-  arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
-  multigarch_spec <- all_facs_multigarch(arma_order_for_roll, fit = FALSE)
+  # arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
+  multigarch_spec <- all_facs_multigarch(
+    ROLLING_ARMA_ORDERS,
+    ROLLING_GARCH_ORDERS,
+    fit = FALSE
+  )
 
   rolling_multigarch_fits <- rolling_multigarch_fit(
     data = facs_xts, multigarch_spec = multigarch_spec,
