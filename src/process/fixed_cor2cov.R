@@ -10,12 +10,15 @@
 suppressPackageStartupMessages({
   library(xts)
   library(rugarch)
+  library(rmgarch)
   library(MBESS)
   library(optparse)
 })
 
 source("src/data/read_data.R")
 source("src/config.R")
+source("src/process/multi_garch_mdl.R")
+source("src/process/copula_mdl.R")
 
 
 in_or_out_sample_cor <- function(data, in_sample_end_row) {
@@ -29,6 +32,40 @@ in_or_out_sample_cor <- function(data, in_sample_end_row) {
   cors_list <- list(
     fixed_cor.IN_SAM = cor(data[1:in_sample_end_row]),
     fixed_cor.OUT_SAM = cor(data[(in_sample_end_row + 1):nrow(data)])
+  )
+  return(cors_list)
+}
+
+
+static_cop_cor <- function(data, in_sample_end_row, in_sam_multigarch_fit) {
+  #' @title 根据样本内外的数据fit 一个静态的copula，然后找到rcor
+  #'
+  #' @param data xts 对象。因子数据。
+  #' @param in_sample_end_row 样本内的结束行
+  #' @param in_sam_multigarch_fit in sample 数据拟合的multigarch_fit 对象
+  #' @return list of 2 matrix. 包含了使用样本内外数据fit 的静态copula
+  #' 导出的cor matrix。
+
+  arma_order_mat <- matrix(rep(3, 10), nrow = 2)
+  multi_garch_spec <- all_facs_multigarch(
+    arma_order_df = arma_order_mat,
+    fit = FALSE
+  )
+
+  in_sample_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    copula_type = "mvt", is_dcc = FALSE,
+    fac_data = data[1:in_sample_end_row, ],
+    multigarch_fit = in_sam_multigarch_fit
+  )
+  out_sample_cop <- fit_garch_copula(
+    multigarch_spec = multi_garch_spec,
+    copula_type = "mvt", is_dcc = FALSE,
+    fac_data = data[(in_sample_end_row + 1):nrow(data), ]
+  )
+  cors_list <- list(
+    cop_cor.IN_SAM = rcor(in_sample_cop),
+    cop_cor.OUT_SAM = rcor(out_sample_cop)
   )
   return(cors_list)
 }
@@ -252,8 +289,13 @@ fix_cor2cov_main <- function() {
     in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
   }
 
-  # 计算样本内与样本外的cor 即相关系数矩阵
+  # 1. 计算样本内与样本外的cor 即相关系数矩阵
   cors_list <- in_or_out_sample_cor(facs_xts, in_sample_end_row)
+  cops_cors_list <- static_cop_cor(
+    data = facs_xts, in_sample_end_row,
+    in_sam_multigarch_fit = multigarch_list[[as.character(in_sample_end_row)]]
+  )
+  fixed_cors_list <- append(cors_list, cops_cors_list)
   # 滚动fitler 预测sigma
   forcasted_sigma_xts <- rolling_sigma_forcast(
     multi_garch_fit_list = multigarch_list,
@@ -262,7 +304,7 @@ fix_cor2cov_main <- function() {
   )
 
   # 对样本内与外的cor list 应用函数cors2covs，转换成flat cov xts 对象
-  flat_covs_list <- lapply(cors_list,
+  flat_covs_list <- lapply(fixed_cors_list,
     FUN = cors2covs,
     sigma_xts = forcasted_sigma_xts
   )
