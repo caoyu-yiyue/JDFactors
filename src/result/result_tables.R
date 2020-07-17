@@ -83,10 +83,29 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
 }
 
 
+net_port_ret <- function(port_ret_xts, summed_turnover_xts,
+                         turnover_cost = 0.0025) {
+  #' @title 在组合收益中，计算去除了交易成本的净收益率序列
+  #'
+  #' @param port_ret_xts xts 对象。单一sigma 下，不同策略（不同列）的组合收益率
+  #' @param summed_turnover_xts xts 对象。结构与port_ret_xts 相同。
+  #' 每期数据为策略下所有因子的换手率的和。
+  #' @param turnover_cost 交易成本。暂时默认25 个基点（0.0025）。
+
+  port_ret_net <-
+    (1 + port_ret_xts) * (1 - turnover_cost * summed_turnover_xts) - 1
+  return(port_ret_net)
+}
+
+
 result_table_main <-
   function(port_ret_list, weights_list, facs_xts, rf_xts = NULL,
+           turnover_cost = 0.0025,
            data_freq = "Week",
-           statistic_names = c("ME", "VOL", "SK", "KU", "SR", "U", "TO"),
+           statistic_names = c(
+             "ME", "VOL", "SK", "KU", "SR",
+             "U", "TO", "SR_n", "U_n"
+           ),
            strategy_names = NULL) {
     #' @title 计算组合收益率统计表的主函数，将不同的计算结合在一起，再将不同的gamma 值的表合并为list
     #'
@@ -96,6 +115,7 @@ result_table_main <-
     #' 每列为因子名，每行为时间。
     #' @param facs_xts xts 对象。因子收益的xts 对象。
     #' @param rf_xts xts 对象。无风险收益xts 对象。
+    #' @param turnover_cost scalar. 假定的交易成本（小数方式，非百分数）
     #' @param data_freq charactor. 因子数据的频率。默认为"Week"，用于计算年化利率时确定scale
     #' @param statistic_names charactor. 用于单独指定统计量的名字。
     #' @param strategy_names 策略名字，默认为NULL。如果是NULL 时将使用之前代码内部的名字。
@@ -136,10 +156,23 @@ result_table_main <-
       )
       turnover_mean <- colMeans(turnovers_series, na.rm = TRUE) * 100
 
+      # 计算净收益序列和相关的结果
+      port_ret_net <- net_port_ret(
+        port_ret_xts = port_ret_xts, summed_turnover_xts = turnovers_series,
+        turnover_cost = turnover_cost
+      )
+      net_sharpe_ratio <- PerformanceAnalytics::SharpeRatio.annualized(
+        port_ret_net
+      )
+      utilities_net <- apply(port_ret_net, 2,
+        FUN = utility_value,
+        risk_coef = as.numeric(risk_coef)
+      )
+
       # 合并几种统计结果，根据传入参数进行结果的重命名
       single_gamma_result <- t(rbind(
         basic_statistics, utilities,
-        turnover_mean
+        turnover_mean, net_sharpe_ratio, utilities_net
       ))
       if (!is.null(strategy_names)) {
         rownames(single_gamma_result) <- strategy_names
