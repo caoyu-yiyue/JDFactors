@@ -35,22 +35,22 @@ basic_statistics_table <-
 
 
 utility_value <- function(portfolio_ret, risk_coef) {
-  #' @title 计算某一种策略下组合收益的效用函数值
+  #' @title 计算某一种策略下组合收益的效用函数值（原值乘100）
   #'
   #' @param portfolio_ret xts 对象，组合收益率。
   #' @param risk_coef numeric scalar. 风险厌恶系数。
   #' @return numeric scalar. 效用函数值
 
-  port_mean <- mean(portfolio_ret)
-  variance <- var(portfolio_ret)
-  u_value <- port_mean - risk_coef / 2 * variance
+  port_mean <- mean(portfolio_ret, na.rm = TRUE)
+  variance <- var(portfolio_ret, na.rm = TRUE)
+  u_value <- (port_mean - risk_coef / 2 * variance) * 100
   return(u_value)
 }
 
 
 single_strategy_turnover <- function(strategy_name, port_ret_xts,
                                      weights_list, facs_xts, rf_xts = NULL) {
-  #' @title 计算某一个策略的平均turnover（换手率）
+  #' @title 计算某一个策略的平均turnover（换手率），结果为百分数（原数*100）
   #'
   #' @param strategy_name charactor, 策略名。one of c("t_dcc", "norm_dcc",
   #' "t_static", "norm_static", "fixed_cor.IN_SAM", "fixed_cor.OUT_SAM",
@@ -80,7 +80,8 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
   # 每日相加得到当日的换手率，取平均得到整体的平均换手率
   turnovers <- rowSums(abs(weights_diff[, 1:fac_num]))
   turnover_mean <- mean(turnovers, na.rm = TRUE)
-  return(turnover_mean)
+  turnover_mean_percent <- turnover_mean * 100
+  return(turnover_mean_percent)
 }
 
 
