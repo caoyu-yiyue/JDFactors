@@ -311,7 +311,7 @@ fix_cor2cov_main <- function() {
   )
 
   # 2. 使用rolling cor 计算的cov
-  window_len <- switch(data_freq, "Week" = 52, "Day" = 250, "Month" = 12)
+  window_len <- switch(data_freq, "Week" = 104, "Day" = 500, "Month" = 24)
   rolling_flat_cors <- rolling_flat_cor(
     facs_xts = facs_xts,
     in_sample_end_row = in_sample_end_row,
