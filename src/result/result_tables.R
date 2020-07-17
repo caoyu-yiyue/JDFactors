@@ -50,7 +50,7 @@ utility_value <- function(portfolio_ret, risk_coef) {
 
 single_strategy_turnover <- function(strategy_name, port_ret_xts,
                                      weights_list, facs_xts, rf_xts = NULL) {
-  #' @title 计算某一个策略的平均turnover（换手率），结果为百分数（原数*100）
+  #' @title 计算某一个策略的每日turnover（换手率）序列。表示为小数（没有乘100%）
   #'
   #' @param strategy_name charactor, 策略名。one of c("t_dcc", "norm_dcc",
   #' "t_static", "norm_static", "fixed_cor.IN_SAM", "fixed_cor.OUT_SAM",
@@ -59,7 +59,7 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
   #' @param weights list，每个item 是某种策略的权重，names 为如上的strategy_name 的集合
   #' @param facs_xts xts 对象，因子每日收益率xts。
   #' @details weights 传入Begin of Period Weights，即每日的起始权重与当日的因子收益相乘得出当日的组合收益率。
-  #' @return numeric scalar. 日期平均的换手率。
+  #' @return numeric vector. 一个每日的turnover 序列。
 
   # 得到因子数量，解析出策略对应的组合收益和权重值
   fac_num <- ncol(facs_xts)
@@ -78,10 +78,8 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
   weights_diff <- weights_xts - lag(end_weights)
 
   # 每日相加得到当日的换手率，取平均得到整体的平均换手率
-  turnovers <- rowSums(abs(weights_diff[, 1:fac_num]))
-  turnover_mean <- mean(turnovers, na.rm = TRUE)
-  turnover_mean_percent <- turnover_mean * 100
-  return(turnover_mean_percent)
+  turnovers_every_day <- rowSums(abs(weights_diff[, 1:fac_num]))
+  return(turnovers_every_day)
 }
 
 
@@ -131,14 +129,18 @@ result_table_main <-
         risk_coef = as.numeric(risk_coef)
       )
       # 对每个策略计算名，计算平均换手率
-      turnovers <- sapply(strategies_vec,
+      turnovers_series <- sapply(strategies_vec,
         FUN = single_strategy_turnover,
         port_ret_xts = port_ret_xts, weights_list = single_gamma_weights_list,
         facs_xts = facs_xts, rf_xts = rf_xts
       )
+      turnover_mean <- colMeans(turnovers_series, na.rm = TRUE) * 100
 
       # 合并几种统计结果，根据传入参数进行结果的重命名
-      single_gamma_result <- t(rbind(basic_statistics, utilities, turnovers))
+      single_gamma_result <- t(rbind(
+        basic_statistics, utilities,
+        turnover_mean
+      ))
       if (!is.null(strategy_names)) {
         rownames(single_gamma_result) <- strategy_names
       }
