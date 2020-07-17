@@ -162,7 +162,8 @@ result_table_main <-
         turnover_cost = turnover_cost
       )
       net_sharpe_ratio <- PerformanceAnalytics::SharpeRatio.annualized(
-        port_ret_net
+        port_ret_net,
+        scale = switch(data_freq, "Week" = 52, "Day" = 252, "Month" = 12)
       )
       utilities_net <- apply(port_ret_net, 2,
         FUN = utility_value,
