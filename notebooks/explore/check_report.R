@@ -1,9 +1,9 @@
 source("src/result/result_tables.R")
 source("src/data/read_data.R")
 
-port_list <- read_port_ret()
-weights_list <- read_opt_weights(which = "all")
-facs_xts <- read_fac_xts()
+port_list <- read_port_ret(data_freq = "Week")
+weights_list <- read_opt_weights(which = "all", data_freq = "Week")
+facs_xts <- read_fac_xts(data_freq = "Week")
 rf_xts <- read_rf_xts()
 
 result_table_sum1 <- result_table_main(
