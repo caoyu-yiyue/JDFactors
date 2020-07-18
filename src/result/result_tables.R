@@ -78,6 +78,7 @@ single_strategy_turnover <- function(strategy_name, port_ret_xts,
   weights_diff <- weights_xts - lag(end_weights)
 
   # 每日相加得到当日的换手率，取平均得到整体的平均换手率
+  # 这里只计算了因子的（前fac_num 列的换手率，不算rf 列的换手)
   turnovers_every_day <- rowSums(abs(weights_diff[, 1:fac_num]))
   return(turnovers_every_day)
 }
