@@ -15,6 +15,7 @@ suppressPackageStartupMessages({
 source("src/data/read_data.R")
 source("src/config.R")
 source("src/process/multi_garch_mdl.R")
+source("src/process/rolling_best_arma.R")
 
 
 rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
@@ -50,35 +51,16 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
     cvar_flags <- .cvar_for_multigarchfit(multi_garch_fit)
     problem_idx <- which(!(conver_flags & cvar_flags))
     for (i in problem_idx) {
-      # 每个fac 尝试最多5 次
-      for (try_time in 1:5) {
-        ugfit <- ugarchfit(
-          spec = multigarch_spec@spec[[i]],
-          data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-          solver = "hybrid", fit.control = list(scale = 10**try_time)
-        )
-
-        if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
-          # 通过验证，被ugfit 放进multi garch fit 中
-          multi_garch_fit@fit[[i]] <- ugfit
-          break
-        }
-
-        # 如果到了最后一次还没有成功，尝试solver：lbfgs 五次
-        if (try_time == 5) {
-          for (lbfgs_try_time in 1:5) {
-            ugfit <- ugarchfit(
-              spec = multigarch_spec@spec[[i]],
-              data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-              solver = "lbfgs", fit.control = list(scale = 10**lbfgs_try_time)
-            )
-            if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
-              # 通过验证，被ugfit 放进multi garch fit 中
-              multi_garch_fit@fit[[i]] <- ugfit
-              break
-            }
-          }
-        }
+      # 重试3 次计算
+      ugfit <- ugarchfit_retry(
+        spec = multigarch_spec@spec[[i]],
+        data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
+        use_default_par = FALSE,
+        retry_time = 3
+      )
+      # 如果通过检验，则放入multi_garch_fit 中
+      if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
+        multi_garch_fit@fit[[i]] <- ugfit
       }
     }
 
