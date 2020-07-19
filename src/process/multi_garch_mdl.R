@@ -97,6 +97,17 @@ all_facs_multigarch <- function(arma_order_df,
 }
 
 
+getspec_multifit <- function(mgfit) {
+  #' @title 对一个uGARCHmultifit 对象，找到它的uGARCHmultispec 对象
+  #' @param mgfit multiGARCHfit 对象
+  #' @return rugarch::uGARCHmultispec 对象
+
+  ugspec_list <- lapply(mgfit@fit, rugarch::getspec)
+  result_mspec <- rugarch::multispec(ugspec_list)
+  return(result_mspec)
+}
+
+
 multi_garch_fit_main <- function() {
   #' @title 拟合mutliGARCHfit 的主函数
   #'
