@@ -15,21 +15,25 @@ source("src/config.R")
 source("src/data/read_data.R")
 
 
-ugarchfit_retry <- function(spec, data, retry_time = 3) {
+ugarchfit_retry <- function(spec, data, use_default_par = TRUE,
+                            retry_time = 3) {
   #' @title 一个重试ugarchfit 函数的wrapper 函数。重试(retry_time * 2 + 1) 次
   #' 返回第一个合法结果，或返回最后一个结果
   #' @param spec uGARCHspec，指定GARCH 模型的设定
   #' @param data 用于拟合garch 的数据。这里必须是单维数据（用于ugarchfit 函数)。
+  #' @param use_default_par Bool, 默认TRUE. 是否使用默认参数先fit 一次。
   #' @param retry_time 重试次数，默认3。这里首先使用默认参数的"hybrid" solver 计算一次
   #' 然后，使用不同的scale 参数重试retry_time 次。最后再使用"lbfgs" solver 重试
   #' retry_time 次，共(retry_time * 2 + 1)次
   #' @return uGARCHfit 对象。第一个成功通过检验的uGARCHfit 对象；或重试最后一次的uGARCHfit
 
-  # 首先使用默认参数进行一次拟合
-  ugfit <- ugarchfit(spec = spec, data = data, solver = "hybrid")
-  if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
-    # 通过验证，返回结果
-    return(ugfit)
+  # 如果指定使用默认参数拟合，首先使用默认参数进行一次拟合
+  if (use_default_par) {
+    ugfit <- ugarchfit(spec = spec, data = data, solver = "hybrid")
+    if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
+      # 通过验证，返回结果
+      return(ugfit)
+    }
   }
 
   # 开始重试
