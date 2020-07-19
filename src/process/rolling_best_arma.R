@@ -133,6 +133,19 @@ extract_best_armas <- function(bic_and_conv, arma_order_combine) {
 }
 
 
+current_arma_order <- function(best_armas_df, t) {
+  #' @title 根据计算所得的所有时间best arma df，找到t 时刻的最佳arma order
+  #' @param best_armas_df tbl(df) 保存所有时刻最佳arma order 的tbl(df) 对象
+  #' @param t numeric. 要找的时间（行号）
+  #' @return matrix. t 时刻的最佳arma order。如果该时刻没有计算过，会返回一个
+  #' 0 行的matrix。
+
+  current_armas <- best_armas_df[best_armas_df$t == t, 3:ncol(best_armas_df)]
+  current_armas_mat <- as.matrix(current_armas)
+  return(current_armas_mat)
+}
+
+
 rolling_best_arma_main <- function() {
   option_list <- list(
     make_option(
