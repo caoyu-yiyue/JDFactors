@@ -78,6 +78,27 @@ in_sample_yearend_row <- function(data, in_sample_year) {
 }
 
 
+read_rolling_best_arma <-
+  function(base_name = "data/interim/rolling_best_arma",
+           data_freq = "Week", extension = ".Rds",
+           which = "best_arma") {
+    #' @title 读取rolling best arma 的数据
+    #' @param data_freq str. 数据频度，默认"Week"
+    #' @param which str. one of c("best_arma", "all_bics") 指定读取最佳arma
+    #' 还是计算的所有的bics。
+
+    data_path <- paste0(base_name, "_", data_freq, extension)
+    best_armas <- readRDS(data_path)
+    if (which == "best_arma") {
+      return(best_armas[["best_armas"]])
+    } else if (which == "all_bics") {
+      return(best_armas[["all_bics"]])
+    } else {
+      stop("Wrong 'which' Parameter. Must one of 'best_arma' and 'all_bics'")
+    }
+  }
+
+
 read_rolling_multigarchfit <-
   function(base_name = "data/interim/rolling_multigarch", data_freq = "Week",
            extension = ".Rds") {
