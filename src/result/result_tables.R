@@ -44,7 +44,7 @@ utility_value <- function(portfolio_ret, risk_coef) {
 
   port_mean <- mean(portfolio_ret, na.rm = TRUE)
   variance <- var(portfolio_ret, na.rm = TRUE)
-  u_value <- (port_mean - risk_coef / 2 * variance) * 100
+  u_value <- (port_mean - risk_coef / 2 * variance)
   return(u_value)
 }
 
