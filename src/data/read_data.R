@@ -225,3 +225,26 @@ read_port_ret <- function(base_name = "data/processed/port_ret",
   data_path <- paste0(base_name, "_", data_freq, extension)
   return(readRDS(data_path))
 }
+
+
+read_result_tables <-
+  function(which, base_name = "data/processed/result_tables",
+           data_freq = "Week", extension = ".Rds") {
+    #' @title 读取脚本计算的滚动结果
+    #' @param which str. one of c("all", "sum1", "no_sum1") 读取哪种结果
+    #' @param data_freq str. 指定数据频度
+    #' @return list of list if which == "all", list else.
+    #' 最底层的项目为一个gamma 下的结果list。
+
+    data_path <- paste0(base_name, "_", data_freq, extension)
+    result <- if (which == "all") {
+      readRDS(data_path)
+    } else {
+      readRDS(data_path)[[which]]
+    }
+
+    if (is.null(result)) {
+      stop("'Get NULL data, Seems Wrong 'which' Parameter.")
+    }
+    return(result)
+  }

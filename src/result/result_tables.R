@@ -7,6 +7,7 @@
 suppressPackageStartupMessages({
   library(xts)
   library(PerformanceAnalytics)
+  library(optparse)
 })
 
 source("src/data/read_data.R")
@@ -187,3 +188,49 @@ result_table_main <-
 
     return(tables_list)
   }
+
+
+if (sys.nframe() == 0) {
+  # 解析命令行参数
+  option_list <- list(
+    make_option(
+      opt_str = c("-f", "--data_freq"), type = "character",
+      default = "Week", help = "Which data freq of factors?",
+      metavar = "character"
+    ),
+    make_option(c("-o", "--out_put"),
+      type = "character",
+      default = NULL, help = "Path to save out put file.",
+      metavar = "character"
+    )
+  )
+  opt_parser <- optparse::OptionParser(option_list = option_list)
+  opts <- optparse::parse_args(opt_parser)
+  data_freq <- opts[["data_freq"]]
+
+  # 读取数据
+  port_list <- read_port_ret(data_freq = data_freq)
+  weights_list <- read_opt_weights(which = "all", data_freq = data_freq)
+  facs_xts <- read_fac_xts(data_freq = data_freq)
+  rf_xts <- read_rf_xts(data_freq = data_freq)
+
+  # 计算结果
+  result_table_sum1 <- result_table_main(
+    port_ret_list = port_list$sum1,
+    weights_list = weights_list$sum1, facs_xts = facs_xts,
+    data_freq = data_freq
+  )
+
+  result_table_nosum1 <- result_table_main(
+    port_ret_list = port_list$no_sum1,
+    weights_list = weights_list$no_sum1, facs_xts = facs_xts,
+    data_freq = data_freq, rf_xts = rf_xts
+  )
+
+  # 保存结果
+  result_tables_list <- list(
+    sum1 = result_table_sum1,
+    no_sum1 = result_table_nosum1
+  )
+  saveRDS(result_tables_list, file = opts[["out_put"]])
+}

@@ -39,7 +39,7 @@ rolling_part: data/interim/rolling_best_arma_$(data_freq).Rds \
 	data/interim/rolling_multigarch_$(data_freq).Rds \
 	data/interim/rolling_cop_rcov_$(data_freq).Rds data/interim/fixed_cor2cov_$(data_freq).Rds \
 	data/interim/rolling_mean_$(data_freq).Rds data/interim/opt_weights_$(data_freq).Rds \
-	data/processed/port_ret_$(data_freq).Rds
+	data/processed/port_ret_$(data_freq).Rds data/processed/result_tables_$(data_freq).Rds
 
 data/interim/rolling_best_arma_$(data_freq).Rds: data/interim/facs_xts.Rds
 	Rscript --vanilla src/process/rolling_best_arma.R -f $(data_freq) -o $@
@@ -64,6 +64,9 @@ data/interim/opt_weights_$(data_freq).Rds: data/interim/rolling_cop_rcov_$(data_
 data/processed/port_ret_$(data_freq).Rds: data/interim/opt_weights_$(data_freq).Rds \
 	data/interim/rf_xts.Rds
 	Rscript --vanilla src/result/port_ret.R -f $(data_freq) -o $@
+
+data/processed/result_tables_$(data_freq).Rds: data/processed/port_ret_$(data_freq).Rds
+	Rscript --vanilla src/result/result_tables.R -f $(data_freq) -o $@
 
 robust:
 	$(MAKE) rolling_part data_freq=Day
