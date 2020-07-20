@@ -90,12 +90,13 @@ multisol_cgarchfit <- function(spec, data, fit = NULL, ...) {
 }
 
 
-rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
+rolling_cgarch_rcov <- function(data, cop_type, is_dcc,
                                 step_by, multigarchfit_list) {
   #' @title 对data 根据pure_cgarch_spec, 从第start_row 开始，每step_by(12期) refit
   #' 一次，保持参数固定向前filter 12 期，然后重复rolling fit，最终输出所有的预测
   #' cov 矩阵。
-  #'
+  #' @param str. 滚动估计时的copula type。one of c("mvt", "mvnorm")
+  #' @param Bool. 是否为dcc copula.
   #' @param data xts 对象，即多因子的xts 对象
   #' @param pure_cgarch_spec rmgarch::cgarchSpec。初始的cgarchSpec 对象。在这里
   #' 设定norm / t copula；static / dcc copula；以及指定固定参数
@@ -115,7 +116,22 @@ rolling_cgarch_rcov <- function(data, pure_cgarch_spec,
     # 1. 解析fit 过的multigarchfit 对象，fit 一个garch-copula 模型
 
     # 如果t 不在multigarchfit_list 里或者multigarchfit_list 为NULL，都会取出NULL
+    # 如果为NULL 则报错停止
     fitted_multigarchfit <- multigarchfit_list[[as.character(t)]]
+    if (is.null(fitted_multigarchfit)) {
+      stop(stringr::str_interp(
+        "No uGARCHmultifit object at time ${t}",
+        list(t = t)
+      ))
+    }
+
+    # 取出目前garch fit 对象的spec，建立一个cgarchspec
+    current_multispec <- getspec_multifit(fitted_multigarchfit)
+    pure_cgarch_spec <- fit_garch_copula(
+      multigarch_spec = current_multispec,
+      copula_type = cop_type, is_dcc = is_dcc,
+      fit = FALSE
+    )
 
     # 依此使用不同的scale 尝试五次
     for (try_time in 1:5) {
@@ -204,63 +220,39 @@ rolling_cop_rcov_main <- function() {
   facs_xts <- read_fac_xts(data_freq = data_freq)
   multigarchfit_list <- read_rolling_multigarchfit(data_freq = data_freq)
 
-  # 2. 指定cGARCHspec 部分
-  # arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
-  multi_garch_spec <- all_facs_multigarch(
-    arma_order_df = ROLLING_ARMA_ORDERS,
-    garch_order_df = ROLLING_GARCH_ORDERS,
-    fit = FALSE
-  )
-
-  # 3. 正式开始滚动fit
+  # 2. 正式开始滚动fit
   # 1) t_dcc
   print("Rolling rcov for t-cop dcc.")
-  t_dcc_cgarch_spec <- fit_garch_copula(
-    multigarch_spec = multi_garch_spec,
-    copula_type = "mvt", is_dcc = TRUE, fit = FALSE
-  )
   t_dcc_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
-    pure_cgarch_spec = t_dcc_cgarch_spec,
+    cop_type = "mvt", is_dcc = TRUE,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
 
   # 2) norm_dcc
   print("Rolling rcov for norm-cop dcc.")
-  norm_dcc_cgarch_spec <- fit_garch_copula(
-    multigarch_spec = multi_garch_spec,
-    copula_type = "mvnorm", is_dcc = TRUE, fit = FALSE
-  )
   norm_dcc_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
-    pure_cgarch_spec = norm_dcc_cgarch_spec,
+    cop_type = "mvnorm", is_dcc = TRUE,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
 
   # 3) t_static
   print("Rolling rcov for t-cop static.")
-  t_static_cgarch_spec <- fit_garch_copula(
-    multigarch_spec = multi_garch_spec,
-    copula_type = "mvt", is_dcc = FALSE, fit = FALSE
-  )
   t_static_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
-    pure_cgarch_spec = t_static_cgarch_spec,
+    cop_type = "mvt", is_dcc = FALSE,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )
 
   # 4) norm_static
   print("Rolling rcov for norm-cop static.")
-  norm_static_cgarch_spec <- fit_garch_copula(
-    multigarch_spec = multi_garch_spec,
-    copula_type = "mvnorm", is_dcc = FALSE, fit = FALSE
-  )
   norm_static_rcov <- rolling_cgarch_rcov(
     data = facs_xts,
-    pure_cgarch_spec = norm_static_cgarch_spec,
+    cop_type = "mvnorm", is_dcc = FALSE,
     step_by = ROLLING_STEP[data_freq],
     multigarchfit_list = multigarchfit_list
   )

@@ -35,12 +35,16 @@ data/processed/all_cops.Rds: data/interim/multi_garch_mdl.Rds
 # ================================= rolling fit =================================== #
 data_freq:= Week
 
-rolling_part: data/interim/rolling_multigarch_$(data_freq).Rds \
+rolling_part: data/interim/rolling_best_arma_$(data_freq).Rds \
+	data/interim/rolling_multigarch_$(data_freq).Rds \
 	data/interim/rolling_cop_rcov_$(data_freq).Rds data/interim/fixed_cor2cov_$(data_freq).Rds \
 	data/interim/rolling_mean_$(data_freq).Rds data/interim/opt_weights_$(data_freq).Rds \
 	data/processed/port_ret_$(data_freq).Rds
 
-data/interim/rolling_multigarch_$(data_freq).Rds: data/interim/facs_xts.Rds
+data/interim/rolling_best_arma_$(data_freq).Rds: data/interim/facs_xts.Rds
+	Rscript --vanilla src/process/rolling_best_arma.R -f $(data_freq) -o $@
+
+data/interim/rolling_multigarch_$(data_freq).Rds: data/interim/rolling_best_arma_$(data_freq).Rds
 	Rscript --vanilla src/process/rolling_multigarch.R -f $(data_freq) -o $@
 
 data/interim/rolling_cop_rcov_$(data_freq).Rds: data/interim/rolling_multigarch_$(data_freq).Rds

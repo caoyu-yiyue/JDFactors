@@ -15,13 +15,15 @@ suppressPackageStartupMessages({
 source("src/data/read_data.R")
 source("src/config.R")
 source("src/process/multi_garch_mdl.R")
+source("src/process/rolling_best_arma.R")
 
 
-rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
+rolling_multigarch_fit <- function(data, rolling_arma_orders,
+                                   start_t, step_by) {
   #' @title 滚动计算multigarch fit 对象，然后返回这些对象的list
   #'
   #' @param data xts 对象。进行rolling fit 的因子数据
-  #' @param multigarch_spec rugarch::multigarchSpec 对象。滚动时共用的spec
+  #' @param rolling_arma_orders tbl 对象。保存所有拟合时间上的最佳arma_order.
   #' @param start_t int. 最开始估计时的起始数据行数
   #' @param step_by int. 每隔多久refit 一次
   #' @return list of uGARCHmultifit. 滚动估计的fit 对象们，name 为所用数据的行数
@@ -37,6 +39,17 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
   cls <- parallel::makeForkCluster(parallel::detectCores())
   doParallel::registerDoParallel(cls)
   rolling_multigarch_fits <- foreach(t = fit_time) %dopar% {
+    # 首先，找到t 时刻的arma order，从而设定garch_spec
+    arma_order_t <- current_arma_order(
+      best_armas_df = rolling_arma_orders,
+      t = t
+    )
+    multigarch_spec <- all_facs_multigarch(
+      arma_order_t,
+      ROLLING_GARCH_ORDERS,
+      fit = FALSE
+    )
+
     # 首先使用multifit，建立一个multiGARCHfit obj
     multi_garch_fit <- multifit(
       multigarch_spec,
@@ -50,35 +63,16 @@ rolling_multigarch_fit <- function(data, multigarch_spec, start_t, step_by) {
     cvar_flags <- .cvar_for_multigarchfit(multi_garch_fit)
     problem_idx <- which(!(conver_flags & cvar_flags))
     for (i in problem_idx) {
-      # 每个fac 尝试最多5 次
-      for (try_time in 1:5) {
-        ugfit <- ugarchfit(
-          spec = multigarch_spec@spec[[i]],
-          data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-          solver = "hybrid", fit.control = list(scale = 10**try_time)
-        )
-
-        if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
-          # 通过验证，被ugfit 放进multi garch fit 中
-          multi_garch_fit@fit[[i]] <- ugfit
-          break
-        }
-
-        # 如果到了最后一次还没有成功，尝试solver：lbfgs 五次
-        if (try_time == 5) {
-          for (lbfgs_try_time in 1:5) {
-            ugfit <- ugarchfit(
-              spec = multigarch_spec@spec[[i]],
-              data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
-              solver = "lbfgs", fit.control = list(scale = 10**lbfgs_try_time)
-            )
-            if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
-              # 通过验证，被ugfit 放进multi garch fit 中
-              multi_garch_fit@fit[[i]] <- ugfit
-              break
-            }
-          }
-        }
+      # 重试3 次计算
+      ugfit <- ugarchfit_retry(
+        spec = multigarch_spec@spec[[i]],
+        data = tryCatch(data[1:t, i], error = function(cond) data[, i]),
+        use_default_par = FALSE,
+        retry_time = 3
+      )
+      # 如果通过检验，则放入multi_garch_fit 中
+      if (ugfit@fit$convergence == 0 & "cvar" %in% names(ugfit@fit)) {
+        multi_garch_fit@fit[[i]] <- ugfit
       }
     }
 
@@ -114,22 +108,16 @@ rolling_multigarch_main <- function() {
 
   # 读取数据，并找到起始行
   facs_xts <- read_fac_xts(data_freq = data_freq)
+  rolling_best_armas <- read_rolling_best_arma(data_freq = data_freq)
   in_sample_end <- if (data_freq == "Month") {
     IN_SAMPLE_YEARS[data_freq]
   } else {
     in_sample_yearend_row(facs_xts, IN_SAMPLE_YEARS[data_freq])
   }
 
-  # 设定每次refit 共用的multigarch spec 对象
-  # arma_order_for_roll <- matrix(rep(3, 10), nrow = 2)
-  multigarch_spec <- all_facs_multigarch(
-    ROLLING_ARMA_ORDERS,
-    ROLLING_GARCH_ORDERS,
-    fit = FALSE
-  )
-
+  # rolling fit 开始
   rolling_multigarch_fits <- rolling_multigarch_fit(
-    data = facs_xts, multigarch_spec = multigarch_spec,
+    data = facs_xts, rolling_arma_orders = rolling_best_armas,
     start_t = in_sample_end, step_by = ROLLING_STEP[data_freq]
   )
 
