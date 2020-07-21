@@ -186,8 +186,12 @@ format_result_table <- function(result_table, annualize_scale) {
   delta_n <- (1 + diffed_u)**annualize_scale - 1
   all_cols_df <- cbind(reranged_tbl, delta_n)
 
+  # 每行乘放大系数
   scale_vec <- c(100, 100, 1, 1, 1, 10000, 1, 1, 10000, 100)
   scaled_df <- t(apply(all_cols_df, MARGIN = 1, function(row) scale_vec * row))
-  scaled_df["cop_cor.IN_SAM", "delta_n"] <- NA
-  return(scaled_df)
+
+  # 保留两位小数并保存为str
+  result_df <- format(round(scaled_df, digits = 2), nsmall = 2)
+  result_df["cop_cor.IN_SAM", "delta_n"] <- "-"
+  return(result_df)
 }
