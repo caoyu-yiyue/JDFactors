@@ -98,9 +98,9 @@ cop_param_table <- function(cgfit_obj, fac_names) {
 
   fac_num <- length(fac_names)
   corr_param_num <- fac_num * (fac_num - 1) / 2
-  n_obs <- cgfit_obj@model$modeldata$T  # 观测的数量，即拟合时数据的行数
-  cop_type <- cgfit_obj@model$modeldesc$distribution  # 是norm 还是t copula
-  dcc <- cgfit_obj@model$modeldesc$timecopula  # 是动态（dcc)还是静态
+  n_obs <- cgfit_obj@model$modeldata$T # 观测的数量，即拟合时数据的行数
+  cop_type <- cgfit_obj@model$modeldesc$distribution # 是norm 还是t copula
+  dcc <- cgfit_obj@model$modeldesc$timecopula # 是动态（dcc)还是静态
 
   # 计算相关系数参数矩阵 corr_param
   cop_param <- coef(cgfit_obj, type = "dcc")
@@ -109,7 +109,7 @@ cop_param_table <- function(cgfit_obj, fac_names) {
   } else {
     z <- cgfit_obj@mfit$Z
     mean_Q_bar <- (t(z) %*% z) / n_obs
-    diag_Q <- diag(diag(mean_Q_bar)) 
+    diag_Q <- diag(diag(mean_Q_bar))
     inverse_diag_Q_sqrt <- sqrt(matrixcalc::matrix.inverse(diag_Q))
     corr_param <- inverse_diag_Q_sqrt %*% mean_Q_bar %*% inverse_diag_Q_sqrt
   }
@@ -167,4 +167,27 @@ cop_param_table <- function(cgfit_obj, fac_names) {
   }
   rownames(result_tbl) <- NULL
   return(result_tbl)
+}
+
+
+format_result_table <- function(result_table, annualize_scale) {
+  #' @title 对每个gamma 下的结果表格进行需要的格式整理，
+  #' 选择需要的策略、对百分数乘100，计算年化的delta U。
+  #'
+  #' @param result_table matrix/data.frame 单个gamma 下的结果表格。
+  #' @param annualize_scale 年化时使用的scale 值。
+  #' @return matrix 处理过后的结果表格。
+
+  reranged_tbl <- result_table[c(
+    "t_dcc", "norm_dcc", "t_static", "norm_static",
+    "sample", "cop_cor.OUT_SAM", "cop_cor.IN_SAM"
+  ), ]
+  diffed_u <- (reranged_tbl[, "U_n"] - reranged_tbl["cop_cor.IN_SAM", "U_n"])
+  delta_n <- (1 + diffed_u)**annualize_scale - 1
+  all_cols_df <- cbind(reranged_tbl, delta_n)
+
+  scale_vec <- c(100, 100, 1, 1, 1, 10000, 1, 1, 10000, 100)
+  scaled_df <- t(apply(all_cols_df, MARGIN = 1, function(row) scale_vec * row))
+  scaled_df["cop_cor.IN_SAM", "delta_n"] <- NA
+  return(scaled_df)
 }
