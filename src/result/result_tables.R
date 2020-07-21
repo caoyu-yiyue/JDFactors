@@ -14,7 +14,7 @@ source("src/data/read_data.R")
 
 
 basic_statistics_table <-
-  function(ret_xts, data_freq,
+  function(ret_xts, data_freq, rf,
            statistics_name =
              c("Return", "Std", "Skew", "Kurt", "Sharpe Ratio")) {
     #' @title 计算均值、方差、偏度、峰度、Sharp Ratio 等基础统计量的table
@@ -25,7 +25,7 @@ basic_statistics_table <-
     #' @return data.frame 每列为策略名，每行为统计量的一个data.frame
 
     scale <- switch(data_freq, "Week" = 52, "Day" = 252, "Month" = 12)
-    annual_table <- table.AnnualizedReturns(ret_xts, scale = scale)
+    annual_table <- table.AnnualizedReturns(ret_xts, Rf = rf, scale = scale)
     skew <- skewness(ret_xts)
     kurt <- kurtosis(ret_xts)
 
@@ -101,8 +101,8 @@ net_port_ret <- function(port_ret_xts, summed_turnover_xts,
 
 
 result_table_main <-
-  function(port_ret_list, weights_list, facs_xts, rf_xts = NULL,
-           turnover_cost = 0.0025,
+  function(port_ret_list, weights_list, facs_xts, sharp_ratio_rf,
+           rf_xts = NULL, turnover_cost = 0.0025,
            data_freq = "Week",
            statistic_names = c(
              "ME", "VOL", "SK", "KU", "SR",
@@ -116,6 +116,7 @@ result_table_main <-
     #' @param weights_list list. 为二级list，一级名gamma，二级名为策略名。每个项目为因子权重xts，
     #' 每列为因子名，每行为时间。
     #' @param facs_xts xts 对象。因子收益的xts 对象。
+    #' @param sharp_ratio_rf scalar. 计算夏普比率时需要的rf。
     #' @param rf_xts xts 对象。无风险收益xts 对象。
     #' @param turnover_cost scalar. 假定的交易成本（小数方式，非百分数）
     #' @param data_freq charactor. 因子数据的频率。默认为"Week"，用于计算年化利率时确定scale
@@ -143,7 +144,8 @@ result_table_main <-
       # 计算基础的统计量
       basic_statistics <- basic_statistics_table(
         ret_xts = port_ret_xts,
-        data_freq = data_freq
+        data_freq = data_freq,
+        rf = sharp_ratio_rf
       )
       # 对收益率xts 每列计算效用值
       utilities <- apply(port_ret_xts, 2,
@@ -165,7 +167,8 @@ result_table_main <-
       )
       net_sharpe_ratio <- PerformanceAnalytics::SharpeRatio.annualized(
         port_ret_net,
-        scale = switch(data_freq, "Week" = 52, "Day" = 252, "Month" = 12)
+        scale = switch(data_freq, "Week" = 52, "Day" = 252, "Month" = 12),
+        Rf = sharp_ratio_rf
       )
       utilities_net <- apply(port_ret_net, 2,
         FUN = utility_value,
@@ -215,15 +218,19 @@ if (sys.nframe() == 0) {
   rf_xts <- read_rf_xts(data_freq = data_freq)
 
   # 计算结果
+  # 这里使用的无风险收益率都是目前的无风险收益率（即对应频率rf 的最后一行）
+  sharp_ratio_rf <- switch(data_freq, "Week" = 0.000286, "Day" = 4.1e-05,
+    "Month" = 0.001241
+  )
   result_table_sum1 <- result_table_main(
-    port_ret_list = port_list$sum1,
-    weights_list = weights_list$sum1, facs_xts = facs_xts,
+    port_ret_list = port_list$sum1, weights_list = weights_list$sum1,
+    sharp_ratio_rf = sharp_ratio_rf, facs_xts = facs_xts,
     data_freq = data_freq
   )
 
   result_table_nosum1 <- result_table_main(
-    port_ret_list = port_list$no_sum1,
-    weights_list = weights_list$no_sum1, facs_xts = facs_xts,
+    port_ret_list = port_list$no_sum1, weights_list = weights_list$no_sum1,
+    sharp_ratio_rf = sharp_ratio_rf, facs_xts = facs_xts,
     data_freq = data_freq, rf_xts = rf_xts
   )
 
