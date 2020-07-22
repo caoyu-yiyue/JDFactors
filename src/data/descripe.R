@@ -170,7 +170,7 @@ cop_param_table <- function(cgfit_obj, fac_names) {
 }
 
 
-format_result_table <- function(result_table, annualize_scale) {
+.format_result_table <- function(result_table, annualize_scale) {
   #' @title 对每个gamma 下的结果表格进行需要的格式整理，
   #' 选择需要的策略、对百分数乘100，计算年化的delta U。
   #'
@@ -195,3 +195,43 @@ format_result_table <- function(result_table, annualize_scale) {
   result_df["cop_cor.IN_SAM", "delta_n"] <- "-"
   return(result_df)
 }
+
+
+combine_result_tables <-
+  function(result_tables, statistic_names = c(
+             "ME(%)", "STD(%)", "SK", "KU", "SR",
+             "$\\bar{U}$(10^4)", "TO(%)", "$SR_{net}$",
+             "$\\bar{U}_{net}(10^4)$", "$\\Delta_{net}(%)$"
+           ),
+           strategy_names = c(
+             "动态-t", "动态-N", "静态-t", "静态-N", "历史相关",
+             "固定相关-O", "固定相关-I"
+           )) {
+    #' @title 对于一个sum1/nosum1 下的表格list，整理需要的行，然后将不同gamma 表格合并
+    #' @param result_tables 不同gamma 下的结果表格list。
+    #' @return data.frame 一个将不同gamma 下的策略合并在一起的大的result table
+
+    # 整理每个一个gamma 下结果表格的格式
+    formatted_result_tables <- lapply(result_tables, .format_result_table,
+      annualize_scale = 52
+    )
+
+    # list 中加入插入空行，然后合并所有表格
+    statistic_num <- ncol(formatted_result_tables[[1]])
+    tables_with_split <- formatted_result_tables
+    split_row <- list(matrix(rep("", statistic_num), nrow = 1))
+    for (i in (length(tables_with_split) - 1):0) {
+      tables_with_split <- append(tables_with_split, split_row, i)
+    }
+    result_binded <- do.call("rbind", tables_with_split)
+
+    # 更改行名、列名
+    gamma_names <- paste0("$\\gamma = ", names(result_tables), "$")
+    toal_rownames <- c()
+    for (gamma_name in gamma_names) {
+      toal_rownames <- c(toal_rownames, gamma_name, strategy_names)
+    }
+    rownames(result_binded) <- toal_rownames
+    colnames(result_binded) <- statistic_names
+    return(result_binded)
+  }
