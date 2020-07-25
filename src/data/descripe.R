@@ -200,7 +200,7 @@ cop_param_table <- function(cgfit_obj, fac_names) {
 combine_result_tables <-
   function(result_tables, statistic_names = c(
              "ME(%)", "STD(%)", "SK", "KU", "SR",
-             "$\\bar{U}$(10^4)", "TO(%)", "$SR_{net}$",
+             "$\\bar{U}(10^4)$", "TO(%)", "$SR_{net}$",
              "$\\bar{U}_{net}(10^4)$", "$\\Delta_{net}(%)$"
            ),
            strategy_names = c(
