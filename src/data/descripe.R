@@ -201,11 +201,11 @@ combine_result_tables <-
   function(result_tables, statistic_names = c(
              "ME(%)", "STD(%)", "SK", "KU", "SR",
              "$\\bar{U}(10^4)$", "TO(%)", "$SR_{net}$",
-             "$\\bar{U}_{net}(10^4)$", "$\\Delta_{net}(%)$"
+             "$\\bar{U}_{net}(10^4)$", "$\\Delta_{net}$(%)"
            ),
            strategy_names = c(
-             "动态-t", "动态-N", "静态-t", "静态-N", "历史相关",
-             "固定相关-O", "固定相关-I"
+             "动态-t", "动态-N", "静态-t", "静态-N", "历史",
+             "固定O", "固定I"
            )) {
     #' @title 对于一个sum1/nosum1 下的表格list，整理需要的行，然后将不同gamma 表格合并
     #' @param result_tables 不同gamma 下的结果表格list。
