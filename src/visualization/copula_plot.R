@@ -23,9 +23,12 @@ dcc_cop_cor_plot <- function(dcc_cops, colors, legend_txt = NULL, ltys = 1:6,
   idx <- index(rcor_list[[1]])
   plot_names <- colnames(rcor_list[[1]])
 
-  layout_mat <- matrix(c(1:12, 13, 13, 13, 13),
-    nrow = 4, ncol = 4, byrow = TRUE
-  )
+  layout_mat <- if (!is.null(legend_txt)) {
+    matrix(c(1:12, 13, 13, 13, 13), nrow = 4, ncol = 4, byrow = TRUE
+  ) } else {
+    matrix(1:12, nrow = 3, ncol = 4, byrow = TRUE)
+  }
+
   layout(mat = layout_mat, heights = c(rep(0.3, 3), 0.1))
   blank_polts <- length(unique(as.numeric(layout_mat))) - n_plots
   # 对每个图形循环（实际上是对rcor xts 的每列的idx 循环
