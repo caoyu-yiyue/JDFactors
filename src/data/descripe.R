@@ -226,7 +226,7 @@ combine_result_tables <-
     result_binded <- do.call("rbind", tables_with_split)
 
     # 更改行名、列名
-    gamma_names <- paste0("$\\gamma = ", names(result_tables), "$")
+    gamma_names <- paste0("$\\boldsymbol{\\gamma = ", names(result_tables), "}$")
     toal_rownames <- c()
     for (gamma_name in gamma_names) {
       toal_rownames <- c(toal_rownames, gamma_name, strategy_names)
