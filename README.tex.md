@@ -88,11 +88,7 @@ $$
 F\left(r_{1, t}, \ldots, r_{5, t} \mid \mathcal{F}_{t-1} ; \mathbf{P}\right)=\Phi_{\mathbf{P}}\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)
 $$
 
-For $u_{i, t}=F_{i}\left(r_{i, t} \mid \mathcal{F}_{t-1} ;\boldsymbol{\theta_{m, i}}\right)$.
-
-And correlation matrix $\mathbf{P}$ is composed by $\mathbf{z}_{\mathbf{t}}^{*}=\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)^{\prime}$, called by copula shocks.
-
-其中 $u_{i, t}=F_{i}\left(r_{i, t} \mid \mathcal{F}_{t-1} ;\boldsymbol{\theta_{m, i}}\right)$，而相关系数矩阵 $\mathbf{P}$ 由 $\mathbf{z}_{\mathbf{t}}^{*}=\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)^{\prime}$——定义为“Copula 冲击”
+For $u_{i, t}=F_{i}\left(r_{i, t} \mid \mathcal{F}_{t-1} ;\boldsymbol{\theta_{m, i}}\right)$, and correlation matrix $\mathbf{P}$ is composed by $\mathbf{z}_{\mathbf{t}}^{*}=\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)^{\prime}$, defined as copula shocks.
 
 #### Dynamic Copula
 
