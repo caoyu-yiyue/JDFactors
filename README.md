@@ -1,4 +1,4 @@
-# JDFactors
+# Joint Dynamic Factors
 
 A repository of finance calculating, for research of modeling joint dynamic correlation of 5 factors model. The name of JDFactor is just Joint Dynamic Factors.
 
