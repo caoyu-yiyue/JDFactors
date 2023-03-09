@@ -88,28 +88,58 @@ $$
 F\left(r_{1, t}, \ldots, r_{5, t} \mid \mathcal{F}_{t-1} ; \mathbf{P}\right)=\Phi_{\mathbf{P}}\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)
 $$
 
-For $u_{i, t}=F_{i}\left(r_{i, t} \mid \mathcal{F}_{t-1} ;\boldsymbol{\theta_{m, i}}\right)$.
+And
 
-And correlation matrix $\mathbf{P}$ is composed by $\mathbf{z}_{\mathbf{t}}^{*}=\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)^{\prime}$, called by copula shocks.
+$$u_{i, t}=F_{i}\left(r_{i, t} \mid \mathcal{F}_{t-1} ;\boldsymbol{\theta_{m, i}}\right)
+$$
 
-For $u_{i, t}=F_{i}\left(r_{i, t} \mid \mathcal{F}_{t-1} ;\boldsymbol{\theta_{m, i}}\right)$ , And $\mathbf{P}$ is made from $\mathbf{z}_{\mathbf{t}}^{*}=\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)^{\prime}$ , named as Copula Shock.
+And correlation matrix $\mathbf{P}$ is composed by
+
+$$
+\mathbf{z}_{\mathbf{t}}^{*}=\left(\Phi^{-1}\left(u_{1, t}\right), \ldots, \Phi^{-1}\left(u_{5, t}\right)\right)^{\prime}
+$$
+
+called by copula shocks.
 
 #### Dynamic Copula
 
-For a collections of variables $\mathbf{R}_{\mathbf{t}}=\left(R_{1, t}, \ldots, R_{n, t}\right), \{t=1,2, \ldots, T\}$, with $\boldsymbol{\mu_{t}}=E\left[\mathbf{y}_{\mathrm{t}} \mid \mathcal{F}_{t-1}\right]$ and positive definite conditional variance-covariance matrix $\boldsymbol{\Sigma_{t}}=E\left[\left(\mathbf{r}_{\mathrm{t}}-\boldsymbol{\mu_{t}}\right)\left(\mathbf{r}_{\mathrm{t}}-\boldsymbol{\mu_{t}}\right)^{\prime} \mid \mathcal{F}_{t-1}\right]=E\left[\boldsymbol{\epsilon_{t}} \boldsymbol{\epsilon_{t}}^{\prime} \mid \mathcal{F}_{t-1}\right]$ , a MGARCH model:
+For a collection of variables
+
+$$
+\mathbf{R}_{\mathbf{t}}=\left(R_{1, t}, \ldots, R_{n, t}\right), \{t=1,2, \ldots, T\}
+$$
+
+with
+
+$$
+\boldsymbol{\mu_{t}}=E\left[\mathbf{y}_{\mathrm{t}} \mid \mathcal{F}_{t-1}\right]
+$$
+
+and positive definite conditional variance-covariance matrix:
+
+$$\boldsymbol{\Sigma_{t}}=E\left[\left(\mathbf{r}_{\mathrm{t}}-\boldsymbol{\mu_{t}}\right)\left(\mathbf{r}_{\mathrm{t}}-\boldsymbol{\mu_{t}}\right)^{\prime} \mid \mathcal{F}_{t-1}\right]=E\left[\boldsymbol{\epsilon_{t}} \boldsymbol{\epsilon_{t}}^{\prime} \mid \mathcal{F}_{t-1}\right]
+$$
+
+An MGARCH model:
 
 $$
 \mathbf{r_{t}}=\boldsymbol{\mu_{t}}+\boldsymbol{\epsilon_{t}}=\boldsymbol{\mu_{t}}+\boldsymbol{\Sigma_{t}}^{\frac{1}{2}} \mathbf{n}_{\mathrm{t}}
 $$
 
-with $\mathbf{n}_{\mathbf{t}} \sim I I D\left(\mathbf{0}, \mathbf{I}_{\mathbf{n}}\right)$. $\boldsymbol{\Sigma_t}^\frac{1}{2}$ is the Cholesky Decomposition of $\boldsymbol{\Sigma_t}$ . Discompose the variance-covariance matrix:
+with
+
+$$
+\mathbf{n}_{\mathbf{t}} \sim I I D\left(\mathbf{0}, \mathbf{I}_{\mathbf{n}}\right)
+$$
+
+$\boldsymbol{\Sigma_t}^\frac{1}{2}$ is the Cholesky Decomposition of $\boldsymbol{\Sigma_t}$. Discompose the variance-covariance matrix:
 
 $$
 \boldsymbol{\Sigma_{t}}=\mathbf{V}_{\mathbf{t}}^{\frac{1}{2}} \mathbf{P}_{\mathbf{t}} \mathbf{V}_{\mathbf{t}}^{\frac{1}{2}}
 $$
 
 $\mathbf{V_t}$ is a diagonal matrix of $\sigma^2_{i,t}$,  $\mathbf{P_t}$ is a positive definition correlation matrix.
- 
+
 Now define a standard shock, $\mathbf{z_t} = \mathbf{V_t}^{-\frac{1}{2}}\boldsymbol{\epsilon_t}$,  $\mathbf{P_t}$ is the conditional variance-covarince matrix of $\mathbf{z_t}$. The conditional correlation matrix has the following process:
 
 $$
@@ -134,4 +164,13 @@ $$
 \mathbf{Q}_{\mathbf{t}}=\left(\mathbf{\bar{Q}}-a \mathbf{\bar{Q}}-b \mathbf{\bar{Q}}-g \mathbf{\bar{Q}}^{-}\right)+a \mathbf{z}_{\mathbf{t}-1} \mathbf{z}_{\mathbf{t}-1}^{\prime}+b \mathbf{Q}_{\mathbf{t}-1}+g \mathbf{z}_{\mathbf{t}-1}^{-} \mathbf{z}_{\mathbf{t}-\mathbf{1}}^{-\prime}
 $$
 
-with $z^{-}_{i,t-1} = min(z_{i,t-1}, 0)$ , and $\mathbf{\bar{Q}^{-}} = E[\mathbf{z^{-}_{t-1}}\mathbf{z^{-\prime}_{t-1}}]$ .
+with
+$$
+z^{-}_{i,t-1} = min(z_{i,t-1}, 0)
+$$
+
+and
+
+$$
+\mathbf{\bar{Q}^{-}} = E[\mathbf{z^{-}_{t-1}}\mathbf{z^{-\prime}_{t-1}}]
+$$
