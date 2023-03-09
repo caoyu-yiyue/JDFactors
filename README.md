@@ -30,7 +30,7 @@ Of course more complicated works in detail. Maybe some are not efficient codes e
 
 ## Outline of Mathematical Background
 
-Some mathematical Backgrounds for ARMA-GARCH-Copula are here, for more clarity. But it's very annoying that GitHub can't render some LaTeX codes that are rendered normally locally or by other online tools, and even can't preview the LaTeX result in its online file editor. So I can't fix that now. You can download the file and render it yourself to see the full information.
+Some mathematical Backgrounds for ARMA-GARCH-Copula are here, for more clarity. But it's very annoying that GitHub can't render some LaTeX codes when they are in line. So forgive me if some line breaks seem not needed.
 
 ### ARMA-GARCH
 
@@ -165,6 +165,7 @@ $$
 $$
 
 with
+
 $$
 z^{-}_{i,t-1} = min(z_{i,t-1}, 0)
 $$
