@@ -18,7 +18,7 @@ But there's no original data here, for the copyright reason. And there're some C
 
 ## Target
 
-Frankly speaking, the codes do the following works:
+Frankly speaking, the project is considering the nonlinear joint dynamic correlation of the classic 5 factors investment model. By modeling it, we can get more returns in the historical investing test. And the codes are doing the following work:
 
 1. An ARMA model for every factor, and finding the best ARMA order by investigating orders from 1 to 10.
 2. ARMA-GARCH model fit for every factor, using the ARMA order selected.
